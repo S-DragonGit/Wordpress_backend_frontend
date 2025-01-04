@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import SidebarLinkGroup from './SidebarLinkGroup';
 import { images } from '../constants';
 
@@ -13,7 +13,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const { pathname } = location;
   const trigger = useRef<any>(null);
   const sidebar = useRef<any>(null);
-  const navigate = useNavigate()
 
   const storedSidebarExpanded = localStorage.getItem('sidebar-expanded');
   const [sidebarExpanded] = useState(
@@ -56,14 +55,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   }, [sidebarExpanded]);
 
 
-  const handleLogout = () => {
-    navigate("/auth/signin")
-  }
 
   return (
     <aside
       ref={sidebar}
-      className={`absolute lg:m-2 left-0 top-0 z-9999 flex rounded-lg w-72.5 flex-col overflow-y-hidden bg-primary-light duration-300 ease-linear lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-75'
+      className={`absolute lg:m-2 left-0 top-0 z-9999 flex rounded-e-lg lg:rounded-lg w-72.5 flex-col overflow-y-hidden bg-primary-light duration-300 ease-linear lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-75'
         }`}
     >
       {/* <!-- SIDEBAR HEADER --> */}
@@ -112,7 +108,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     <React.Fragment>
                       <NavLink
                         to="/"
-                        className={`group relative flex items-center rounded-md gap-2.5 py-2 px-4 font-medium  duration-300 ease-in-out hover:bg-primary hover:text-white  ${(pathname === '/' ||
+                        className={`group relative flex items-center justify-center rounded-md gap-2.5 py-2 px-4 font-medium  duration-300 ease-in-out hover:bg-primary hover:text-white  ${(pathname === '/' ||
                           pathname.includes('/dashboard')) ?
                           'bg-primary text-white' : 'text-primary bg-primary-light2'
                           }`}
@@ -127,7 +123,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <li>
                 <NavLink
                   to="/eventManagement"
-                  className={`group relative flex items-center gap-2.5 rounded-md py-2 px-4 font-medium  duration-300 ease-in-out hover:bg-primary hover:text-white  
+                  className={`group relative flex items-center justify-center gap-2.5 rounded-md py-2 px-4 font-medium  duration-300 ease-in-out hover:bg-primary hover:text-white  
                     ${(pathname.includes('/eventManagement')) ?
                       'bg-primary text-white' : 'text-primary bg-primary-light2'
                     }`}
@@ -138,7 +134,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <li>
                 <NavLink
                   to="/notifications"
-                  className={`group relative flex items-center gap-2.5 rounded-md py-2 px-4 font-medium  duration-300 ease-in-out hover:bg-primary hover:text-white  
+                  className={`group relative flex items-center justify-center gap-2.5 rounded-md py-2 px-4 font-medium  duration-300 ease-in-out hover:bg-primary hover:text-white  
                     ${(pathname.includes('/notifications')) ?
                       'bg-primary text-white' : 'text-primary bg-primary-light2'
                     }`}
@@ -149,7 +145,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <li>
                 <NavLink
                   to="/navigatorManagement"
-                  className={`group relative flex items-center gap-2.5 rounded-md py-2 px-4 font-medium  duration-300 ease-in-out hover:bg-primary hover:text-white  
+                  className={`group relative flex items-center justify-center gap-2.5 rounded-md py-2 px-4 font-medium  duration-300 ease-in-out hover:bg-primary hover:text-white  
                     ${(pathname.includes('/navigatorManagement')) ?
                       'bg-primary text-white' : 'text-primary bg-primary-light2'
                     }`}
@@ -160,7 +156,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <li>
                 <NavLink
                   to="/analytics"
-                  className={`group relative flex items-center gap-2.5 rounded-md py-2 px-4 font-medium  duration-300 ease-in-out hover:bg-primary hover:text-white  
+                  className={`group relative flex items-center justify-center gap-2.5 rounded-md py-2 px-4 font-medium  duration-300 ease-in-out hover:bg-primary hover:text-white  
                     ${(pathname.includes('/navigatorManagement')) ?
                       'bg-primary text-white' : 'text-primary bg-primary-light2'
                     }`}
