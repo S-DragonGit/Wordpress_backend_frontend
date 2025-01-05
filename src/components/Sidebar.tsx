@@ -157,7 +157,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 <NavLink
                   to="/analytics"
                   className={`group relative flex items-center justify-center gap-2.5 rounded-md py-2 px-4 font-medium  duration-300 ease-in-out hover:bg-primary hover:text-white  
-                    ${(pathname.includes('/navigatorManagement')) ?
+                    ${(pathname.includes('/analytics')) ?
                       'bg-primary text-white' : 'text-primary bg-primary-light2'
                     }`}
                 >
