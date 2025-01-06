@@ -12,8 +12,8 @@ const SwitcherTwo: React.FC<SwitcherTwoProps> = ({ list, activeSwitch, setActive
                 <button
                     key={index}
                     onClick={() => setActiveSwitch(item)}
-                    className={`flex w-full justify-center items-center gap-2 px-4 py-2 rounded-lg ${activeSwitch === item ? "bg-primary text-white hover:text-primary" : "bg-white text-primary"
-                        } hover:bg-primary-light3 `}
+                    className={`flex w-full justify-center items-center gap-2 px-4 py-2 rounded-lg ${activeSwitch === item ? "bg-primary text-white " : "bg-white text-primary hover:bg-primary-light3"
+                        }  `}
                 >
                     {item}
                 </button>
