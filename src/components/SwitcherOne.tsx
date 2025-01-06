@@ -13,8 +13,8 @@ const SwitcherOne: React.FC<SwitcherProps> = ({ list, activeSwitch, setActiveSwi
                 <button
                     key={index}
                     onClick={() => setActiveSwitch(item.title)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg ${activeSwitch === item.title ? "bg-primary text-white hover:text-primary" : "bg-white text-primary"
-                        } hover:bg-primary-light3 `}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg ${activeSwitch === item.title ? "bg-primary text-white " : "bg-white text-primary hover:bg-primary-light3"
+                        } `}
                 >
                     <img src={item.svg} alt={item.title} className="w-5 h-5" />
                 </button>
