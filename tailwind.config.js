@@ -13,6 +13,7 @@ export default {
       "primary-light2": '#1E9DA32E',
       "primary-light3": '#C4E6E8',
       "gray-border": '#E1E1E1',
+      "gray-light": '#FAFAFA',
       current: 'currentColor',
       transparent: 'transparent',
       white: '#FFFFFF',
