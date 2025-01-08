@@ -208,12 +208,44 @@ export const formFields: FormOneProps[] = [
 export const formFieldsTwo: FormOneProps[] = [
   { label: 'Members', type: 'text', name: 'eventTitle', isRequired: true },
   {
+    label: 'Member Permission',
+    type: 'checkbox',
+    name: 'permission',
+    options: [
+      { label: 'Modify event', value: 'Modify event', defaultChecked: true },
+      { label: 'Invite others', value: 'Invite others' },
+      { label: 'View members list', value: 'View members list' },
+    ],
+  },
+];
+export const formFieldNotification: FormOneProps[] = [
+  { label: 'Audience', type: 'text', name: 'audience', isRequired: true },
+  { label: 'Notification Title', type: 'text', name: 'title', isRequired: true },
+  { label: 'Description', type: 'textarea', name: 'description', isRequired: true },
+  { label: 'Link', type: 'text', name: 'link', isRequired: true },
+  { label: 'File', type: 'file', name: 'file', isRequired: true },
+  {
     label: 'Is this meeting virtual?',
-    type: 'radioTwo',
+    type: 'radio',
     name: 'meeting',
     options: [
-      { label: 'Yes', value: 'yes', defaultChecked: true },
-      { label: 'No', value: 'no' },
+      { label: 'Enabled', value: 'yes', defaultChecked: true },
+      { label: 'Desabled', value: 'no' },
     ],
+  },
+];
+
+export const meetingTags = [
+  {
+    category: "Therapy",
+    items: ["Individual", "Family", "Trauma", "Support Groups", "Grief Counseling", "Depression/Anxiety"],
+  },
+  {
+    category: "Health Screening",
+    items: ["Cancer Screening", "High Blood Pressure", "Heart Disease", "Diabetes/Blood Sugar", "Vaccine", "STDs"],
+  },
+  {
+    category: "CAM Clinic",
+    items: ["Acupuncture", "Chiropractic Care", "Massage Therapy", "Yoga"],
   },
 ];

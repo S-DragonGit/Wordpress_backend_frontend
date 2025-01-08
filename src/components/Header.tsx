@@ -13,7 +13,7 @@ const Header = (props: {
               e.stopPropagation();
               props.setSidebarOpen(!props.sidebarOpen);
             }}
-            className="z-99999 block rounded-sm border border-stroke bg-secondary p-1.5 shadow-sm  lg:hidden"
+            className="z-99999 block rounded-sm border border-primary-light2 bg-primary p-1.5 shadow-sm  lg:hidden"
           >
             <span className="relative block h-5.5 w-5.5 cursor-pointer">
               <span className="du-block absolute right-0 h-full w-full">

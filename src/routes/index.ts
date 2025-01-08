@@ -3,6 +3,7 @@ const Analytics = lazy(() => import('../pages/Analytics/Analytics'));
 const EventManagement = lazy(() => import('../pages/EventManagement/EventManagement'));
 const NavigatorMng = lazy(() => import('../pages/NavigatorMng/NavigatorMng'));
 const Notification = lazy(() => import('../pages/Notification/Notification'));
+const CreateNotification = lazy(() => import('../pages/Notification/CreateNotification'));
 const CreateEvents = lazy(() => import('../pages/EventManagement/CreateEvents'));
 
 const coreRoutes = [
@@ -30,6 +31,11 @@ const coreRoutes = [
         path: '/eventManagement/create',
         title: 'EventManagement',
         component: CreateEvents,
+    },
+    {
+        path: '/notifications/create',
+        title: 'Notification',
+        component: CreateNotification,
     },
 ];
 
