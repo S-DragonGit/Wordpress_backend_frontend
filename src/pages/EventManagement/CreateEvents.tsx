@@ -1,5 +1,6 @@
 import { formFields, formFieldsTwo, meetingTags } from "../../app/list";
 import FormOne from "../../components/FormOne";
+import RecurringComponent from "../../components/Recurring";
 
 const CreateEvents: React.FC = () => {
     return (
@@ -14,6 +15,9 @@ const CreateEvents: React.FC = () => {
                     {formFieldsTwo.map((field, index) => (
                         <FormOne key={index} {...field} />
                     ))}
+                </div>
+                <div className="col-span-2" >
+                    <RecurringComponent />
                 </div>
             </div>
             <div>
