@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import SidebarLinkGroup from './SidebarLinkGroup';
 import { images } from '../constants';
+import { UserLogout } from '../app/redux/userSlice';
+import { useDispatch } from 'react-redux';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -13,6 +15,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const { pathname } = location;
   const trigger = useRef<any>(null);
   const sidebar = useRef<any>(null);
+
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   const storedSidebarExpanded = localStorage.getItem('sidebar-expanded');
   const [sidebarExpanded] = useState(
@@ -55,6 +60,10 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   }, [sidebarExpanded]);
 
 
+  const handleLogout = () => {
+    dispatch(UserLogout())
+    navigate("/login")
+  }
 
   return (
     <aside
@@ -68,7 +77,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
         <h2 className=' text-xl font-bold'>Admin Name</h2>
         <h2 className=''>admin@gmail.com</h2>
-        <button className='bg-primary-light text-primary w-full py-1 rounded-md' >Logout</button>
+        <button onClick={handleLogout} className='bg-primary-light text-primary w-full py-1 rounded-md' >Logout</button>
 
         <button
           ref={trigger}
