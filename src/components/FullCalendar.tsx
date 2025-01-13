@@ -50,7 +50,7 @@ const CalendarView = () => {
     };
 
     return (
-        <div className="mt-5">
+        <div className="mt-5 text-sm">
             <FullCalendar
                 plugins={[
                     dayGridPlugin,
@@ -60,7 +60,7 @@ const CalendarView = () => {
                 ]}
                 headerToolbar={{
                     left: "prev,next today",
-                    center: "title",
+                    // center: "title",
                     right: "dayGridMonth,timeGridWeek,timeGridDay",
                 }}
                 events={calendarEvents}

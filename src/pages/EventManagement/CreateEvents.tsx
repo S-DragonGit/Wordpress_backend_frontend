@@ -4,8 +4,8 @@ import RecurringComponent from "../../components/Recurring";
 
 const CreateEvents: React.FC = () => {
     return (
-        <div className="flex gap-2">
-            <div className="grid gap-5 grid-cols-2 mt-10 ml-10">
+        <div className="flex flex-col smd:flex-row-reverse items-center w-full smd:justify-start gap-2">
+            <div className="smd:grid gap-5 grid-cols-2 mt-10 smd:ml-10">
                 <div className="flex flex-col gap-5">
                     {formFields.map((field, index) => (
                         <FormOne key={index} {...field} />

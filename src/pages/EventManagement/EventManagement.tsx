@@ -27,7 +27,7 @@ const EventManagement = () => {
                         Create new <span className="font-bold">+</span>
                     </button>
                 </Link>
-                <div className="relative w-2/3">
+                <div className="relative w-2/3 hidden sm:block  ">
                     <input
                         type="text"
                         className="border border-gray-border rounded-lg py-2 px-4 pl-10 text-sm outline-none w-full"
