@@ -4,7 +4,8 @@ import { Store } from '../app/redux/store';
 
 const AxiosInstance = (token: string | null) => {
     const instance = axios.create({
-        baseURL: import.meta.env.VITE_BASE_URL,
+        // baseURL: import.meta.env.VITE_BASE_URL,
+        baseURL: "/api",
         headers: {
             'Authorization': token ? `Bearer ${token}` : '',
         },

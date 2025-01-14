@@ -1,19 +1,127 @@
-import { CiSearch } from "react-icons/ci";
-import { formFieldNotification } from "../../app/list";
-import FormOne from "../../components/FormOne";
 import { icons } from "../../constants";
+import { useRef, useState } from "react";
 
 const CreateNotification = () => {
+    const [isTherapyOpen, setIsTherapyOpen] = useState(false);
+    const [isCamOpen, setIsCamOpen] = useState(false);
+
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
+        const [fileName, setFileName] = useState("No file chosen");
+    
+        const handleFileButtonClick = () => {
+            if (fileInputRef.current) {
+                fileInputRef.current.click();
+            }
+        };
+    
+        const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+            const file = event.target.files?.[0];
+            setFileName(file ? file.name : "No file chosen");
+        };
     return (
-        <div className="flex w-full">
-            <div className="grid gap-5 grid-cols-2 mt-10 ml-10">
-                <div className="flex flex-col gap-5">
-                    {formFieldNotification.map((field, index) => (
-                        <FormOne key={index} {...field} />
-                    ))}
+            <div className="grid gap-5 smd:grid-cols-2 grid-cols-1 smd:mt-10 smd:ml-10">
+                <div className="flex flex-col gap-5 p-4 max-w-2xl">
+                    <h2 className="text-xl font-semibold">Create New Notification</h2>
+
+                    {/* Send To Section */}
+                    <div className="flex flex-col gap-2">
+                        <label className="font-medium">
+                            <span className="text-red-500">*</span>SEND TO:
+                        </label>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <input type="radio" name="sendTo" className="w-4 h-4" />
+                                <span>All Users:</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input type="radio" name="sendTo" className="w-4 h-4" />
+                                <span>Disabled</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Event/Attendees Section */}
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm">Event(s)/Attendees:</span>
+                        <select className="border border-gray-border w-full p-2 rounded-sm" name="" id="">
+                            <option value="">Events</option>
+                        </select>
+                    </div>
+
+                    {/* Tags Section */}
+                    <div className="flex gap-2">
+                        <h5>Tags</h5>
+                        <div>
+                            <div className="flex items-center gap-2" >
+                                <input type="checkbox" className="w-4 h-4" />
+                                <h5>Health Screening</h5>
+                            </div>
+                            <select name="" className="bg-primary-light2 mt-3 py-4 p-3" id="">
+                                <option value="">Cancer Screening</option>
+                                <option value="">Hight Bp</option>
+                                <option value="">Heart Disease</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Notification Title */}
+                    <div className="flex flex-col gap-2 border-t border-gray-border">
+                        <h6 className="text-sm text-center" >Notification Info</h6>
+                        <label className="text-sm mt-2">
+                            <span className="text-red-500">*</span>Notification Title
+                        </label>
+                        <input
+                            type="text"
+                            className="border border-gray-border p-2 rounded"
+                        />
+                    </div>
+
+                    {/* Description */}
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm">Description</label>
+                        <textarea
+                            className="border border-gray-border p-2 rounded h-32"
+                        />
+                    </div>
+
+                    {/* Link */}
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm">Link</label>
+                        <input
+                            type="text"
+                            className="border border-gray-border p-2 rounded"
+                        />
+                    </div>
+
+                    {/* Image Upload */}
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm">Image</label>
+                        <div className="flex gap-4 items-center">
+                    <button
+                        className="bg-primary p-1 rounded-md text-white font-semibold px-3"
+                        onClick={handleFileButtonClick}
+                    >
+                        Choose file +
+                    </button>
+                    <span>{fileName}</span>
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                    />
                 </div>
-                <div className="border-l border-gray-border pl-5">
-                    <div className="grid grid-cols-3 gap-2">
+                    </div>
+
+                    {/* Status */}
+                    <div className="flex items-center gap-2">
+                        <span className="font-medium">Status:</span>
+                        <span>Drafts</span>
+                    </div>
+                </div>
+                <div className="smd:border-l border-gray-border pl-5">
+                    {/* <h5 className="text-center font-semibold mb-4" ><span className="text-failed" >*</span>HOW TO SEND:</h5> */}
+                    <div className="grid smd:grid-cols-3 grid-cols-1 smd:gap-2 gap-6">
                         <div className="flex flex-col items-center text-center gap-2">
                             <div className="h-32 border border-gray-border flex flex-col gap-3 items-center rounded-lg font-semibold text-sm p-5">
                                 <img src={icons.PlayOnce} alt="" />
@@ -48,7 +156,7 @@ const CreateNotification = () => {
                             className="border border-gray-border rounded-lg py-2 px-4 pl-10 text-sm outline-none w-full"
                             placeholder="Search for an event"
                         />
-                        <CiSearch className="absolute top-1/2 left-3 transform -translate-y-1/2" />
+                        {/* <CiSearch className="absolute top-1/2 left-3 transform -translate-y-1/2" /> */}
                     </div>
 
                     {/* Map and Geo-fencing Fields */}
@@ -100,7 +208,6 @@ const CreateNotification = () => {
                     </div>
                 </div>
             </div>
-        </div>
     );
 };
 
