@@ -3,10 +3,6 @@
     {
       "source": "/(.*)",
       "destination": "/index.html"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "http://54.221.54.242/index.php/api/wp/:path*"
     }
   ]
 }
