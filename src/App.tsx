@@ -6,17 +6,17 @@ import routes from './routes'
 import { Suspense } from 'react'
 import Loader from './common/Loader'
 import Login from './pages/Auth/Login'
-import NoAuth from './services/NoAuth'
-import RequireAuth from './services/RequireAuth'
+// import NoAuth from './services/NoAuth'
+// import RequireAuth from './services/RequireAuth'
 
 function App() {
   return (
     <Routes>
-      <Route element={<NoAuth />}>
+      {/* <Route element={<NoAuth />}> */}
         <Route path='/login' element={<Login />} />
-      </Route>
+      {/* </Route> */}
       <Route element={<DefaultLayout />}>
-        <Route element={<RequireAuth />}>
+        {/* <Route element={<RequireAuth />}> */}
           <Route path='/' element={<Dashboard />} />
           {routes.map((routes, index) => {
             const { path, component: Component } = routes;
@@ -33,7 +33,7 @@ function App() {
             );
           })}
         </Route>
-      </Route>
+      {/* </Route> */}
     </Routes>
   )
 }
