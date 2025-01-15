@@ -5,7 +5,7 @@ import { Store } from '../app/redux/store';
 const AxiosInstance = (token: string | null) => {
     const instance = axios.create({
         // baseURL: import.meta.env.VITE_BASE_URL,
-        baseURL: "/api",
+        baseURL: "https://rafiki.momoagency.co/index.php/api/wp",
         headers: {
             'Authorization': token ? `Bearer ${token}` : '',
         },
