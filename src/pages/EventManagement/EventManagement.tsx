@@ -12,8 +12,8 @@ import { Link } from "react-router-dom";
 const EventManagement = () => {
     const switchList = ["Published", "Drafts"];
     const switchListSvg = [
-        { svg: icons.Table, title: "Table" },
-        { svg: icons.Calendar, title: "Calendar" }
+        { svg: icons.Table, white: icons.TableWhite, title: "Table" },
+        { svg: icons.Calendar, white: icons.CalendarWhite, title: "Calendar" }
     ];
 
     const [switchOne, setSwitchOne] = useState("Table");
