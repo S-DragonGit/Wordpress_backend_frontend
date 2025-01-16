@@ -1,7 +1,7 @@
 import React from "react";
 
 interface SwitcherProps {
-    list: { svg: string; title: string }[];
+    list: { svg: string; white: string; title: string }[];
     activeSwitch: string;
     setActiveSwitch: (arg: string) => void;
 }
@@ -16,7 +16,7 @@ const SwitcherOne: React.FC<SwitcherProps> = ({ list, activeSwitch, setActiveSwi
                     className={`flex items-center gap-2 px-4 py-2 rounded-lg ${activeSwitch === item.title ? "bg-primary text-white " : "bg-white text-primary hover:bg-primary-light3"
                         } `}
                 >
-                    <img src={item.svg} alt={item.title} className="w-5 h-5" />
+                    <img src={activeSwitch === item.title ? item.white : item.svg} alt={item.title} className="w-5 h-5" />
                 </button>
             ))}
         </div>

@@ -8,10 +8,10 @@ export default {
   ],
   theme: {
     colors: {
-      primary: '#1E9DA3',
-      "primary-light": '#E8F6F7',
-      "primary-light2": '#1E9DA32E',
-      "primary-light3": '#C4E6E8',
+      primary: '#432A14',
+      "primary-light": '#FBF2EA',
+      "primary-light2": '#EADEBC',
+      "primary-light3": '#EADEBC',
       "gray-border": '#E1E1E1',
       "gray-light": '#FAFAFA',
       current: 'currentColor',
