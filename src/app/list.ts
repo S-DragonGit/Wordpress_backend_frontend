@@ -221,7 +221,7 @@ export const formFieldsTwo: FormOneProps[] = [
 
 export const formFieldsLogin: FormOneProps[] = [
   { label: 'Username', type: 'text', name: 'username', isRequired: true },
-  { label: 'Password', type: 'text', name: 'password', isRequired: true },
+  { label: 'Password', type: 'password', name: 'password', isRequired: true },
 
 ];
 export const formFieldNotification: FormOneProps[] = [

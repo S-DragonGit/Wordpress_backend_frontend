@@ -32,7 +32,7 @@ const NavigatorView = () => {
                     <TableOne columns={navigatiorColumn} data={eventPublished} />
                 </div>
             </div>
-            <div className="mt-5 w-50 h-[500px] bg-primary text-sm">
+            <div className=" w-[280px]  text-sm">
                 <FullCalendar
                     plugins={[
                         dayGridPlugin,
@@ -54,6 +54,7 @@ const NavigatorView = () => {
                     droppable={true}
                     dayMaxEvents={2}
                     weekends={true}
+                    contentHeight={600}
                     initialView="timeGridDay"
                 />
             </div>

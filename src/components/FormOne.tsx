@@ -13,12 +13,12 @@ export interface FormOneProps {
 }
 
 // Update the FormOne component
-const FormOne: React.FC<FormOneProps> = ({ 
-    label, 
-    type, 
-    name, 
-    placeholder, 
-    isRequired, 
+const FormOne: React.FC<FormOneProps> = ({
+    label,
+    type,
+    name,
+    placeholder,
+    isRequired,
     options,
     value,        // Add this
     onChange      // Add this
