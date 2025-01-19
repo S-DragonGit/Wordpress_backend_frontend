@@ -4,7 +4,7 @@ import { useMutation } from '@tanstack/react-query'
 import { authApi } from '../../services/auth'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { userLogin } from '../../app/redux/userSlice'
+import { userId, userLogin } from '../../app/redux/userSlice'
 import { useDispatch } from 'react-redux'
 
 const Login = () => {
@@ -23,8 +23,16 @@ const Login = () => {
                 setError("Please Enter valid data")
                 return
             }
+            if (formData.username !== 'Rafikicoalition') {
+                setError("Your are not admin")
+                return
+            }
 
             if (data.data.token) {
+                if (data.data.user.ID) {
+                    const id = data.data.user.ID
+                    dispatch(userId({ id }))
+                }
                 const token = data.data.token
                 dispatch(userLogin({ token }))
                 navigate('/')

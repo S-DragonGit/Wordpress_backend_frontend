@@ -1,7 +1,7 @@
 import { useState } from "react";
 import SwitcherTwo from "../../components/SwitcherTwo";
 import TableOne from "../../components/TableOne";
-import { eventDraftedColumns, eventPublishedColumns } from "../../app/columns";
+import {navigatiorColumn } from "../../app/columns";
 import { eventPublished } from "../../app/list";
 import { CiSearch } from "react-icons/ci";
 import { Link } from "react-router-dom";
@@ -32,7 +32,7 @@ const Notification = () => {
                 <SwitcherTwo list={switchList} activeSwitch={switchTwo} setActiveSwitch={setSwitchTwo} />
             </div>
             <div className="w-full">
-                <TableOne columns={switchTwo === "Draft" ? eventDraftedColumns: eventPublishedColumns } data={eventPublished} />
+                <TableOne columns={switchTwo === "Draft" ? navigatiorColumn: navigatiorColumn } data={eventPublished} />
             </div>
         </div>
     );

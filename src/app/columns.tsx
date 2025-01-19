@@ -119,7 +119,7 @@ export const navigatiorColumn = [
     {
         header: "Member(s)",
         accessor: "Members", // Maps to the `Members` field in data
-        Cell: (row: any) => row.Members.join(", "), // Custom rendering logic for member list
+        Cell: (row: any) => row.Members?.join(", "), // Custom rendering logic for member list
     },
     {
         header: "",

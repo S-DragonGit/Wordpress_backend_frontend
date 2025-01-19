@@ -1,7 +1,7 @@
 import { CiSearch } from "react-icons/ci";
 import { icons } from "../../constants";
 import SwitcherOne from "../../components/SwitcherOne";
-import {  useState } from "react";
+import { useState } from "react";
 import SwitcherTwo from "../../components/SwitcherTwo";
 import TableOne from "../../components/TableOne";
 import { eventDraftedColumns, eventPublishedColumns } from "../../app/columns";
@@ -10,7 +10,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchEvents } from "../../services/events";
 import { useSelector } from "react-redux";
-import { selectCurrentToken } from "../../app/redux/userSlice";
+import { selectCurrentId, selectCurrentToken } from "../../app/redux/userSlice";
 
 const EventManagement = () => {
     const switchList = ["Published", "Drafts"];
@@ -22,10 +22,11 @@ const EventManagement = () => {
     const [switchOne, setSwitchOne] = useState("Table");
     const [switchTwo, setSwitchTwo] = useState("Published");
     const token = useSelector(selectCurrentToken);
+    const id = useSelector(selectCurrentId);
 
     const { data: events, isLoading } = useQuery({
         queryKey: ['events'],
-        queryFn: () => fetchEvents(token, { user_id: 8 }),
+        queryFn: () => fetchEvents(token, { user_id: parseInt(id) }),
         enabled: !!token,
 
     });
