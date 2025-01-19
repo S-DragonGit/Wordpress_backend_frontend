@@ -1,0 +1,11 @@
+import { postData } from "../api/useApi";
+
+export const fetchEvents = async (token: string, body: any) => {
+    try {
+        const response = await postData("/v2/user/dashboard/home", body, token);
+        return response.data;
+    } catch (err) {
+        console.log(err+"err")
+        return err;
+    }
+}
