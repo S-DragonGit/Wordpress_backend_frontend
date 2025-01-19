@@ -19,11 +19,20 @@ const Login = () => {
     const loginMutation = useMutation({
         mutationFn: (data: { username: string; password: string }) => authApi({ ...data, type: 'email' }),
         onSuccess: (data: any) => {
-            if (data.status >= 200 && data.status < 300) {
+            if (!formData.username || !formData.password) {
+                setError("Please Enter valid data")
+                return
+            }
+
+            if (data.data.token) {
                 const token = data.data.token
                 dispatch(userLogin({ token }))
                 navigate('/')
             } else {
+                if (!data.data.success) {
+                    setError("Invalid user details")
+                    return
+                }
                 if (data.response?.data?.message) {
                     setError(data.response.data.message)
                 } else {

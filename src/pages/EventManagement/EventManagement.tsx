@@ -1,13 +1,16 @@
 import { CiSearch } from "react-icons/ci";
 import { icons } from "../../constants";
 import SwitcherOne from "../../components/SwitcherOne";
-import { useState } from "react";
+import {  useState } from "react";
 import SwitcherTwo from "../../components/SwitcherTwo";
 import TableOne from "../../components/TableOne";
 import { eventDraftedColumns, eventPublishedColumns } from "../../app/columns";
-import { eventPublished } from "../../app/list";
 import CalendarView from "../../components/FullCalendar";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { fetchEvents } from "../../services/events";
+import { useSelector } from "react-redux";
+import { selectCurrentToken } from "../../app/redux/userSlice";
 
 const EventManagement = () => {
     const switchList = ["Published", "Drafts"];
@@ -18,6 +21,15 @@ const EventManagement = () => {
 
     const [switchOne, setSwitchOne] = useState("Table");
     const [switchTwo, setSwitchTwo] = useState("Published");
+    const token = useSelector(selectCurrentToken);
+
+    const { data: events, isLoading } = useQuery({
+        queryKey: ['events'],
+        queryFn: () => fetchEvents(token, { user_id: 8 }),
+        enabled: !!token,
+
+    });
+    const eventList = events?.data?.event_list
 
     return (
         <div className="flex flex-col items-center w-full gap-5">
@@ -42,7 +54,9 @@ const EventManagement = () => {
                     <SwitcherTwo list={switchList} activeSwitch={switchTwo} setActiveSwitch={setSwitchTwo} />
                 </div>
                 <div className="w-full">
-                    <TableOne columns={switchTwo === "Published" ? eventPublishedColumns : eventDraftedColumns} data={eventPublished} />
+                    {
+                        isLoading ? <p className="items-center" >loading...</p> : <TableOne columns={switchTwo === "Published" ? eventPublishedColumns : eventDraftedColumns} data={eventList} />
+                    }
                 </div>
             </> : <div className="w-full"> <CalendarView /></div>}
         </div>

@@ -100,7 +100,7 @@ const FormOne: React.FC<FormOneProps> = ({
                     type={type}
                     placeholder={placeholder}
                     value={value}         // Add this
-                    onChange={onChange}    // Add this
+                    onChange={onChange}
                     className="border border-gray-border bg-gray-light rounded-md py-2 w-[300px] outline-none p-2"
                 />
             )}
