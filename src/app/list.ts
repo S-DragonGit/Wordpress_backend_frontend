@@ -191,7 +191,7 @@ export const calendarCategories = [
 export const formFields: FormOneProps[] = [
   { label: 'Event Title', type: 'text', name: 'eventTitle', isRequired: true },
   { label: 'Description', type: 'textarea', name: 'description' },
-  { label: 'Event Date', type: 'text', name: 'eventDate' },
+  { label: 'Event Date',type: 'date', name: 'eventDate' },
   {
     label: 'Is this meeting virtual?',
     type: 'radio',
@@ -206,17 +206,21 @@ export const formFields: FormOneProps[] = [
 ];
 
 export const formFieldsTwo: FormOneProps[] = [
-  { label: 'Members', type: 'text', name: 'eventTitle', isRequired: true },
+  { label: 'Members', type: 'text', name: 'members', isRequired: true },
   {
     label: 'Member Permission',
     type: 'checkbox',
     name: 'permission',
     options: [
-      { label: 'Modify event', value: 'Modify event', defaultChecked: true },
+      { label: 'Modify event', value: 'Modify event' },
       { label: 'Invite others', value: 'Invite others' },
       { label: 'View members list', value: 'View members list' },
     ],
   },
+  // { label: 'Modify event',type:'checkbox', value: 'Modify event',name :'modifyEvent' },
+  //     { label: 'Invite others', type:'checkbox',value: 'Invite others',name :'inviteOthers' },
+  //     { label: 'View members list',type:'checkbox', value: 'View members list',name :'viewMemberList' },
+  { label: 'Cover image', type: 'file', name: 'coverImage' },
 ];
 
 export const formFieldsLogin: FormOneProps[] = [
