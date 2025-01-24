@@ -8,6 +8,7 @@ export interface FormOneProps {
     placeholder?: string;
     isRequired?: boolean;
     options?: { label: string; value: string; defaultChecked?: boolean }[];
+    items?:{label:string,name:string,type:string}
     value?: string;  // Add this
     onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;  // Add this
 }
@@ -34,7 +35,11 @@ const FormOne: React.FC<FormOneProps> = ({
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
+        console.log("fileee",file);
+        
         setFileName(file ? file.name : "No file chosen");
+        // Pass the file object to the onChange callback
+    onChange({ target: { value: file } });
     };
 
     return (
@@ -136,6 +141,7 @@ onChange={(e) => onChange && onChange(e)} // Pass back to parent
                         <span className="text-sm text-gray-500">{fileName}</span>
                         <input
                             type="file"
+                            name={name}
                             ref={fileInputRef}
                             onChange={handleFileChange}
                             className="hidden"
@@ -188,6 +194,18 @@ onChange={(e) => onChange && onChange(e)} // Pass back to parent
                     onChange={onChange}
                     className="border border-gray-border bg-gray-light rounded-md py-2 w-[300px] outline-none p-2"
                 />
+            )  : type === 'time' ? (
+                <div className="flex items-center gap-2">
+                    <input
+                        id={name}
+                        name={name}
+                        type="time"
+                        value={value}
+                        onChange={onChange}
+                        className="border border-gray-border bg-gray-light rounded-md py-2 outline-none p-2 w-[130px]"
+                    />
+                    {/* <span className="flex items-center">TO</span> */}
+                </div>
             ) : (
                 <input
                     id={name}

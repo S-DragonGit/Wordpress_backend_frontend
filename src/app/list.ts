@@ -192,6 +192,16 @@ export const formFields: FormOneProps[] = [
   { label: 'Event Title', type: 'text', name: 'eventTitle', isRequired: true },
   { label: 'Description', type: 'textarea', name: 'description' },
   { label: 'Event Date',type: 'date', name: 'eventDate' },
+  // { label: 'Event Time',type: 'time', name: 'eventTime',
+  //   items: [
+  //   { label: 'Event Time', name: 'startTime',type: 'time', },
+  //   { label: 'Event Time',name: 'endTime',type: 'time', },
+    
+  // ],
+  
+ //},
+ { label: 'Start Time', type: 'time', name: 'startTime' },
+ { label: 'End Time', type: 'time', name: 'endTime' },
   {
     label: 'Is this meeting virtual?',
     type: 'radio',
