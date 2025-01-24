@@ -6,12 +6,14 @@ import { useSelector } from "react-redux";
 import { selectCurrentId, selectCurrentToken } from "../../app/redux/userSlice";
 import { createsEvents } from "../../services/events";
 import { toast, Toaster } from 'react-hot-toast';
+import { useNavigate } from "react-router-dom";
 
 // import RecurringComponent from "../../components/Recurring";
 
 const CreateEvents: React.FC = () => {
     const userId = useSelector(selectCurrentId);
     const token = useSelector(selectCurrentToken);
+    const navigate=useNavigate();
     // State to store all form values
     const [formValues, setFormValues] = useState<{ [key: string]: any }>({});
 
@@ -279,7 +281,7 @@ const CreateEvents: React.FC = () => {
                     if (response.success) {
                         // Redirect after showing success message
                         setTimeout(() => {
-                            navigate("/eventmanagement");
+                            navigate("/eventManagement");
                         }, 1000);
                         return response.message || "Event created successfully.";
                     } else {
