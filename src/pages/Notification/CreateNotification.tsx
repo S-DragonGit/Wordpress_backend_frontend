@@ -2,7 +2,6 @@ import { icons } from "../../constants";
 import { useRef, useState } from "react";
 
 const CreateNotification = () => {
-
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [fileName, setFileName] = useState("No file chosen");
   const [typeNotification, setTypeNotification] = useState(0);
