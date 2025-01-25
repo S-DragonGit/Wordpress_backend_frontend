@@ -10,7 +10,7 @@ export interface FormOneProps {
     options?: { label: string; value: string; defaultChecked?: boolean }[];
     items?:{label:string,name:string,type:string}
     value?: string;  // Add this
-    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;  // Add this
+    onChange?: (e: React.ChangeEvent<HTMLInputElement| HTMLTextAreaElement >| { target: { value: File | undefined } }) => void;  // Add this
 }
 
 // Update the FormOne component
@@ -39,9 +39,31 @@ const FormOne: React.FC<FormOneProps> = ({
         
         setFileName(file ? file.name : "No file chosen");
         // Pass the file object to the onChange callback
+        if(onChange){
     onChange({ target: { value: file } });
+        }
+    // Ensure onChange is defined before invoking it
+    
     };
 
+    // const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    //     if (onChange) {
+    //         if (type === "file" && e.target instanceof HTMLInputElement) {
+    //             const file = e.target.files?.[0];
+    //             setFileName(file ? file.name : "No file chosen");
+    //             // Pass a custom file-based event to the onChange handler
+    //             onChange({ target: { value: file } } as unknown as React.ChangeEvent<HTMLInputElement>);
+    //         } else if (e.target instanceof HTMLInputElement) {
+    //             // Explicitly narrow down to HTMLInputElement for other input types
+    //             onChange(e as React.ChangeEvent<HTMLInputElement>);
+    //         }
+    //         else if (e.target instanceof HTMLTextAreaElement){
+    //             console.log(e.target.value);
+                
+    //         }
+    //     }
+    // };
+    
     return (
         <div className="flex flex-col sm:flex-row gap-4 items-start">
             <label htmlFor={name} className="w-24 text-sm">

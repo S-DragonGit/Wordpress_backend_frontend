@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { formFields, formFieldsTwo, meetingTags } from "../../app/list";
-import FormOne, { FormOneProps } from "../../components/FormOne";
+import FormOne from "../../components/FormOne";
 import RecurringComponent from "../../components/RecurringComponent";
 import { useSelector } from "react-redux";
 import { selectCurrentId, selectCurrentToken } from "../../app/redux/userSlice";
@@ -227,7 +227,7 @@ const CreateEvents: React.FC = () => {
                     // Include recurring fields only if `isRecurring` is true
                     if (recurringState?.isRecurring) {
                         formData.append("recurring", "true");
-                        formData.append("repeat_every", recurringState?.repeatEvery || "");
+                        formData.append("repeat_every", recurringState?.repeatEvery.toString() || "");
                         formData.append("repeat_on", recurringState?.selectedDays?.join(",") || "");
                         formData.append("time", `${recurringState?.time.hour} ${recurringState?.time.period}`);
                         formData.append("never", recurringState?.endOption === "never" ? "true" : "false");
@@ -235,7 +235,7 @@ const CreateEvents: React.FC = () => {
                             formData.append("on", formValues?.on || "");
                         }
                         if (recurringState?.endOption === "after") {
-                            formData.append("after", recurringState?.occurrences || "");
+                            formData.append("after", recurringState?.occurrences.toString() || "");
                         }
                     } else {
                         formData.append("recurring", "false"); // If not recurring, explicitly set it to "false"
@@ -287,7 +287,7 @@ const CreateEvents: React.FC = () => {
                     } else {
                         throw new Error(response.message || "Failed to create event.");
                     }
-                } catch (err) {
+                } catch (err:any) {
                     console.error("Error creating event:", err);
                     throw new Error(err.message || "An error occurred while creating the event.");
                 }
@@ -321,7 +321,7 @@ const CreateEvents: React.FC = () => {
                         <FormOne key={index} {...field} value={formValues[field.name] || (field.type === 'checkbox' ? [] : '')}
                             onChange={(e) =>
                             
-                                handleFormValueChange(field.name, e.target.value || e.target.checked,e.target.files)}
+                                handleFormValueChange(field.name, e.target.value || e.target.checked)}
                              />
                     ))}
                 </div>
