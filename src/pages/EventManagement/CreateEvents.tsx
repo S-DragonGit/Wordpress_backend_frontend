@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { formFields, formFieldsTwo, meetingTags } from "../../app/list";
 import FormOne from "../../components/FormOne";
 import RecurringComponent from "../../components/RecurringComponent";
@@ -299,21 +298,12 @@ const CreateEvents: React.FC = () => {
             }
         );
     };
-    
     return (
         <div className="flex smd:flex-row flex-col items-center  w-full gap-2">
-             <Toaster/>
             <div className="smd:grid gap-5 grid-cols-2 mt-10 smd:ml-10">
                 <div className="flex flex-col gap-5">
                     {formFields.map((field, index) => (
-                        <FormOne
-                            key={index}
-                            {...field}
-                            value={formValues[field.name] || ""}
-                            onChange={(e) =>
-                                handleFormValueChange(field.name, e.target.value)
-                            }
-                        />
+                        <FormOne key={index} {...field} />
                     ))}
                 </div>
                 <div className="flex flex-col gap-5">
@@ -326,11 +316,7 @@ const CreateEvents: React.FC = () => {
                     ))}
                 </div>
                 <div className="col-span-2" >
-                    {/* <RecurringComponent  /> */}
-                    <RecurringComponent
-                        recurringState={recurringState}
-                        setRecurringState={handleRecurringStateChange}
-                    />
+                    <RecurringComponent />
                 </div>
             </div>
             <div>
@@ -365,8 +351,8 @@ const CreateEvents: React.FC = () => {
                     ))}
                 </div>
                 <div className="flex w-full justify-between mt-4" >
-                    <button className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary" onClick={() => createNewEvent("publish")}>Create and Publish</button>
-                    <button className="p-2 px-4 rounded-md bg-primary text-white text-sm" onClick={() => createNewEvent("draft")}>Create in Drafts</button>
+                    <button className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary">Create and Publish</button>
+                    <button className="p-2 px-4 rounded-md bg-primary text-white text-sm">Create in Drafts</button>
                 </div>
             </div>
 

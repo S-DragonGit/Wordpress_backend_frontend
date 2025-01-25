@@ -7,7 +7,7 @@ const AxiosInstance = (token: string | null) => {
         // baseURL: import.meta.env.VITE_BASE_URL,
         baseURL: "https://rafiki.momoagency.co/index.php/api/wp",
         headers: {
-            'Authorization': token ? `Bearer ${token}` : '',
+            'authorization': token ? `Bearer ${token}` : '',
         },
     });
 
