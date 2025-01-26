@@ -26,7 +26,7 @@ const EventManagement = () => {
 
     const { data: events, isLoading } = useQuery({
         queryKey: ['events'],
-        queryFn: () => fetchEvents(token, { user_id: parseInt(id) }),
+        queryFn: () => fetchEvents(token, { user_id: id }),
         enabled: !!token,
 
     });

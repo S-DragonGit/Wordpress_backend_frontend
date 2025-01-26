@@ -1,5 +1,9 @@
 import { icons } from "../../constants";
 import { useRef, useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { createNotificationApi } from "../../services/notifications";
+import { useSelector } from "react-redux";
+import { selectCurrentId, selectCurrentToken } from "../../app/redux/userSlice";
 
 const CreateNotification = () => {
   interface GeoCategory {
@@ -12,11 +16,14 @@ const CreateNotification = () => {
     priority: string;
   }
 
+  type NotificationStatus = 'draft' | 'scheduled' | 'sent';
+
   // Main interface for the notification data
   interface NotificationFormData {
+    user_id: number;
     notification_title: string;
     notification_description: string;
-    notification_status: "draft" | "scheduled" | "sent";
+    notification_status: NotificationStatus;
     notification_send_to_all_users: boolean;
     notification_event_attendees: string[];
     notification_tags: NotificationTags;
@@ -28,8 +35,12 @@ const CreateNotification = () => {
     notification_scheduled_time: string | null;
   }
 
+  const id = useSelector(selectCurrentId);
+  const token = useSelector(selectCurrentToken);
+
   // Initial state
   const [formData, setFormData] = useState<NotificationFormData>({
+    user_id: id,
     notification_title: "",
     notification_description: "",
     notification_status: "draft",
@@ -40,7 +51,7 @@ const CreateNotification = () => {
       priority: "",
     },
     notification_link: "",
-    notification_image: null,
+    notification_image: "",
     notification_how_to_send: "0",
     notification_geo_category: {
       miles: 5.65,
@@ -125,14 +136,90 @@ const CreateNotification = () => {
   }, [formData]);
 
   // Handle file input
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  interface FileValidationResult {
+    isValid: boolean;
+    error?: string;
+  }
+
+  const validateImageFile = (file: File): FileValidationResult => {
+    // Allowed MIME types
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/bmp"];
+
+    // Allowed extensions (as fallback)
+    const allowedExtensions = [".jpg", ".jpeg", ".png", ".bmp"];
+
+    // Check MIME type
+    if (!allowedTypes.includes(file.type)) {
+      const extension = file.name.toLowerCase().split(".").pop();
+      if (!extension || !allowedExtensions.includes(`.${extension}`)) {
+        return {
+          isValid: false,
+          error:
+            "Invalid file type. Please upload only jpg, jpeg, png, or bmp files",
+        };
+      }
+    }
+
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return {
+        isValid: false,
+        error: "File size should be less than 5MB",
+      };
+    }
+
+    return { isValid: true };
+  };
+
+  // Optional: Add preview functionality
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
-    if (file) {
+
+    if (!file) return;
+
+    const validationResult = validateImageFile(file);
+
+    if (!validationResult.isValid) {
+      alert(validationResult.error);
+      event.target.value = "";
+      setImagePreview(null);
+      return;
+    }
+
+    try {
+      const base64String = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          if (typeof reader.result === "string") {
+            // Set preview
+            setImagePreview(reader.result);
+            resolve(reader.result);
+          } else {
+            reject(new Error("Failed to convert file to base64"));
+          }
+        };
+
+        reader.onerror = () => reject(reader.error);
+
+        reader.readAsDataURL(file);
+      });
+
       setFormData((prev) => ({
         ...prev,
-        notification_image: file,
+        notification_image: base64String,
       }));
       setFileName(file.name);
+    } catch (error) {
+      console.error("Error processing file:", error);
+      alert("Error processing file. Please try again.");
+      event.target.value = "";
+      setImagePreview(null);
     }
   };
 
@@ -181,6 +268,38 @@ const CreateNotification = () => {
       notification_how_to_send: type.toString(),
     }));
   };
+
+  const createNotificationMutation = useMutation({
+    mutationFn: async (data: NotificationFormData) => createNotificationApi(token, data),
+    onSuccess: (data: any) => {
+      console.log(data.data.message);
+    },
+    onError: (error: any) => {
+      console.error("Submission failed", error);
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Create new data object instead of relying on state update
+    const buttonName = (e.target as HTMLButtonElement).name;
+    
+    // Explicitly type the status
+    const status: NotificationStatus = buttonName === "sendButton" ? "sent" : "draft";
+    
+    const updatedData: NotificationFormData = {
+        ...formData,
+        notification_status: status
+    };
+
+    try {
+      await createNotificationMutation.mutate(updatedData);
+    } catch (error) {
+      console.error("Submission error:", error);
+    }
+  };
+  
 
   return (
     <div className="grid gap-5 smd:grid-cols-2 grid-cols-1 smd:mt-10 smd:ml-10">
@@ -317,6 +436,15 @@ const CreateNotification = () => {
               onChange={handleFileChange}
               className="hidden"
             />
+            {imagePreview && (
+              <div className="image-preview">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  style={{ maxWidth: "200px", maxHeight: "200px" }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -484,11 +612,17 @@ const CreateNotification = () => {
         )}
         <div className="flex items-center mt-8 justify-end">
           {typeNotification !== 2 && (
-            <button className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary mx-5 mt-10">
+            <button
+              name="saveButton"
+              onClick={handleSubmit}
+              className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary mx-5 mt-10"
+            >
               Save
             </button>
           )}
           <button
+            name="sendButton"
+            onClick={handleSubmit}
             className={`p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary ${
               typeNotification === 3 ? "m-auto" : "mx-5"
             } mt-10`}
