@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { createNotificationApi } from "../../services/notifications";
 import { useSelector } from "react-redux";
 import { selectCurrentId, selectCurrentToken } from "../../app/redux/userSlice";
+import { useNavigate } from "react-router-dom";
 
 const CreateNotification = () => {
   interface GeoCategory {
@@ -16,7 +17,7 @@ const CreateNotification = () => {
     priority: string;
   }
 
-  type NotificationStatus = 'draft' | 'scheduled' | 'sent';
+  type NotificationStatus = "draft" | "scheduled" | "sent";
 
   // Main interface for the notification data
   interface NotificationFormData {
@@ -234,6 +235,15 @@ const CreateNotification = () => {
 
   // Handle date/time inputs
   const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDateTime = new Date(e.target.value);
+    const now = new Date();
+    
+    // Compare full datetime, not just date
+    if (selectedDateTime < now) {
+        alert('Please select a future date and time');
+        return;
+    }
+    
     setScheduleDateTime(e.target.value);
     // If you need to update form data as well
     setFormData((prev) => ({
@@ -244,6 +254,15 @@ const CreateNotification = () => {
 
   //Handle date inputs
   const handleDateTime = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDate = e.target.value;
+    const today = new Date().toISOString().split("T")[0];
+
+    // Validate if selected date is not before today
+    if (selectedDate < today) {
+      alert("Please select a date from today onwards");
+      return;
+    }
+
     setScheduleDateTime(e.target.value);
     setFormData((prev) => ({
       ...prev,
@@ -269,10 +288,14 @@ const CreateNotification = () => {
     }));
   };
 
+  const navigate = useNavigate();
+
   const createNotificationMutation = useMutation({
-    mutationFn: async (data: NotificationFormData) => createNotificationApi(token, data),
+    mutationFn: async (data: NotificationFormData) =>
+      createNotificationApi(token, data),
     onSuccess: (data: any) => {
       console.log(data.data.message);
+      navigate("/notifications");
     },
     onError: (error: any) => {
       console.error("Submission failed", error);
@@ -284,13 +307,14 @@ const CreateNotification = () => {
 
     // Create new data object instead of relying on state update
     const buttonName = (e.target as HTMLButtonElement).name;
-    
+
     // Explicitly type the status
-    const status: NotificationStatus = buttonName === "sendButton" ? "sent" : "draft";
-    
+    const status: NotificationStatus =
+      buttonName === "sendButton" ? "sent" : "draft";
+
     const updatedData: NotificationFormData = {
-        ...formData,
-        notification_status: status
+      ...formData,
+      notification_status: status,
     };
 
     try {
@@ -299,7 +323,6 @@ const CreateNotification = () => {
       console.error("Submission error:", error);
     }
   };
-  
 
   return (
     <div className="grid gap-5 smd:grid-cols-2 grid-cols-1 smd:mt-10 smd:ml-10">
@@ -514,6 +537,7 @@ const CreateNotification = () => {
 
             <input
               type="datetime-local"
+              min={new Date().toISOString().slice(0, 16)}
               value={scheduleDateTime}
               onChange={(e) => handleDateTimeChange(e)}
               className="border border-gray-border rounded-lg py-2 px-4 text-sm w-1/2"
@@ -601,6 +625,7 @@ const CreateNotification = () => {
                   </label>
                   <input
                     type="date"
+                    min={new Date().toISOString().split("T")[0]}
                     value={geoExpirationDate}
                     onChange={handleDateTime}
                     className="border border-gray-border rounded-lg py-2 px-4 text-sm w-full"
