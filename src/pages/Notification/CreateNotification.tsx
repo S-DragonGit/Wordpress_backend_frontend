@@ -176,7 +176,6 @@ const CreateNotification = () => {
 
   const handleNotificationClick = (type: number) => {
     setTypeNotification(type);
-    console.log(`Notification type set to: ${type}`);
     setFormData((prev) => ({
       ...prev,
       notification_how_to_send: type.toString(),
@@ -206,7 +205,6 @@ const CreateNotification = () => {
                     ...prev,
                     notification_send_to_all_users: e.target.value === "all",
                   }));
-                  console.log(formData);
                 }}
                 className="w-4 h-4"
               />
@@ -224,7 +222,6 @@ const CreateNotification = () => {
                     ...prev,
                     notification_send_to_all_users: e.target.value === "all",
                   }));
-                  console.log(formData);
                 }}
                 className="w-4 h-4"
               />
