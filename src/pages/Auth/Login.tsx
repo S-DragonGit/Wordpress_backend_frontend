@@ -13,19 +13,16 @@ const Login = () => {
         password: ''
     })
     
-    const [error, setError] = useState<string>('')
+    const [error, setError] = useState<string>('');
     const navigate = useNavigate()
     const dispatch = useDispatch();
 
     const loginMutation = useMutation({
         mutationFn: (data: { username: string; password: string }) => authApi({ ...data, type: 'email' }),
         onSuccess: (data: any) => {
+            console.log(data, 'data')
             if (!formData.username || !formData.password) {
                 setError("Please Enter valid data")
-                return
-            }
-            if (formData.username !== 'Rafikicoalition') {
-                setError("Your are not admin")
                 return
             }
 

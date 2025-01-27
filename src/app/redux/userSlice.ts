@@ -43,7 +43,7 @@ export const selectCurrentToken = (state: { user: { Token: string } }) =>
 export const selectCurrentName = (state: { user: { UserName: string } }) =>
     state.user.UserName;
 
-export const selectCurrentId = (state: { user: { Id: string } }) =>
+export const selectCurrentId = (state: { user: { Id: number } }) =>
     state.user.Id;
 
 export const selectProfile = (state: { user: { profileImg: string } }) =>

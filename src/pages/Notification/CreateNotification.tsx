@@ -1,7 +1,275 @@
 import { icons } from "../../constants";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { createNotificationApi } from "../../services/notifications";
+import { useSelector } from "react-redux";
+import { selectCurrentId, selectCurrentToken } from "../../app/redux/userSlice";
+import { useNavigate } from "react-router-dom";
 
 const CreateNotification = () => {
+  interface GeoCategory {
+    miles: number;
+    dist_unit: string;
+  }
+
+  interface NotificationTags {
+    category: string;
+    priority: string;
+  }
+
+  type NotificationStatus = "draft" | "scheduled" | "sent";
+
+  // Main interface for the notification data
+  interface NotificationFormData {
+    user_id: number;
+    notification_title: string;
+    notification_description: string;
+    notification_status: NotificationStatus;
+    notification_send_to_all_users: boolean;
+    notification_event_attendees: string[];
+    notification_tags: NotificationTags;
+    notification_link: string;
+    notification_image: File | null | string;
+    notification_how_to_send: string; // 0: simple, 1: scheduled, 2: geo-fenced
+    notification_geo_category: GeoCategory;
+    notification_geo_fence_expiration_date: string | null;
+    notification_scheduled_time: string | null;
+  }
+
+  const id = useSelector(selectCurrentId);
+  const token = useSelector(selectCurrentToken);
+
+  // Initial state
+  const [formData, setFormData] = useState<NotificationFormData>({
+    user_id: id,
+    notification_title: "",
+    notification_description: "",
+    notification_status: "draft",
+    notification_send_to_all_users: true,
+    notification_event_attendees: [],
+    notification_tags: {
+      category: "",
+      priority: "",
+    },
+    notification_link: "",
+    notification_image: "",
+    notification_how_to_send: "0",
+    notification_geo_category: {
+      miles: 5.65,
+      dist_unit: "miles",
+    },
+    notification_geo_fence_expiration_date: null,
+    notification_scheduled_time: null,
+  });
+
+  const [scheduleDateTime, setScheduleDateTime] = useState<string>("");
+  const [geoExpirationDate, setGeoExpirationDate] = useState<string>("");
+
+  // Handle input changes for different field types
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value, type } = e.target;
+
+    // Handle checkboxes
+    if (type === "checkbox") {
+      const { checked } = e.target as HTMLInputElement;
+      setFormData((prev) => ({
+        ...prev,
+        [name]: checked,
+      }));
+      return;
+    }
+
+    // Handle notification tags
+    if (name.startsWith("notification_tags.")) {
+      const [_, field] = name.split(".");
+      setFormData((prev) => ({
+        ...prev,
+        notification_tags: {
+          ...prev.notification_tags,
+          [field]: value,
+        },
+      }));
+      return;
+    }
+
+    // Handle geo category
+    if (name.startsWith("notification_geo_category.")) {
+      const [_, field] = name.split(".");
+      setFormData((prev) => ({
+        ...prev,
+        notification_geo_category: {
+          ...prev.notification_geo_category,
+          [field]: field === "miles" || field === "km" ? Number(value) : value,
+        },
+      }));
+      return;
+    }
+
+    // Handle arrays (event attendees)
+    if (name === "notification_event_attendees") {
+      if (value === "") {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: [], // Wrap the value in an array since we're storing it as an array
+        }));
+        return;
+      }
+      setFormData((prev) => ({
+        ...prev,
+        [name]: [value], // Wrap the value in an array since we're storing it as an array
+      }));
+      return;
+    }
+
+    // Handle all other inputs
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  useEffect(() => {
+    console.log("all updated:", formData);
+  }, [formData]);
+
+  // Handle file input
+  interface FileValidationResult {
+    isValid: boolean;
+    error?: string;
+  }
+
+  const validateImageFile = (file: File): FileValidationResult => {
+    // Allowed MIME types
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/bmp"];
+
+    // Allowed extensions (as fallback)
+    const allowedExtensions = [".jpg", ".jpeg", ".png", ".bmp"];
+
+    // Check MIME type
+    if (!allowedTypes.includes(file.type)) {
+      const extension = file.name.toLowerCase().split(".").pop();
+      if (!extension || !allowedExtensions.includes(`.${extension}`)) {
+        return {
+          isValid: false,
+          error:
+            "Invalid file type. Please upload only jpg, jpeg, png, or bmp files",
+        };
+      }
+    }
+
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return {
+        isValid: false,
+        error: "File size should be less than 5MB",
+      };
+    }
+
+    return { isValid: true };
+  };
+
+  // Optional: Add preview functionality
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    const validationResult = validateImageFile(file);
+
+    if (!validationResult.isValid) {
+      alert(validationResult.error);
+      event.target.value = "";
+      setImagePreview(null);
+      return;
+    }
+
+    try {
+      const base64String = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          if (typeof reader.result === "string") {
+            // Set preview
+            setImagePreview(reader.result);
+            resolve(reader.result);
+          } else {
+            reject(new Error("Failed to convert file to base64"));
+          }
+        };
+
+        reader.onerror = () => reject(reader.error);
+
+        reader.readAsDataURL(file);
+      });
+
+      setFormData((prev) => ({
+        ...prev,
+        notification_image: base64String,
+      }));
+      setFileName(file.name);
+    } catch (error) {
+      console.error("Error processing file:", error);
+      alert("Error processing file. Please try again.");
+      event.target.value = "";
+      setImagePreview(null);
+    }
+  };
+
+  useEffect(() => {
+    const now = new Date();
+    // Format: YYYY-MM-DDThh:mm
+    const formattedDateTime = now.toISOString().slice(0, 16);
+    setScheduleDateTime(formattedDateTime);
+    const formattedDate = now.toISOString().slice(0, 10);
+    setGeoExpirationDate(formattedDate);
+  }, []);
+
+  // Handle date/time inputs
+  const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDateTime = new Date(e.target.value);
+    const now = new Date();
+    
+    // Compare full datetime, not just date
+    if (selectedDateTime < now) {
+        alert('Please select a future date and time');
+        return;
+    }
+    
+    setScheduleDateTime(e.target.value);
+    // If you need to update form data as well
+    setFormData((prev) => ({
+      ...prev,
+      notification_scheduled_time: e.target.value,
+    }));
+  };
+
+  //Handle date inputs
+  const handleDateTime = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedDate = e.target.value;
+    const today = new Date().toISOString().split("T")[0];
+
+    // Validate if selected date is not before today
+    if (selectedDate < today) {
+      alert("Please select a date from today onwards");
+      return;
+    }
+
+    setScheduleDateTime(e.target.value);
+    setFormData((prev) => ({
+      ...prev,
+      notification_geo_fence_expiration_date: e.target.value,
+    }));
+  };
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [fileName, setFileName] = useState("No file chosen");
   const [typeNotification, setTypeNotification] = useState(0);
@@ -14,13 +282,48 @@ const CreateNotification = () => {
 
   const handleNotificationClick = (type: number) => {
     setTypeNotification(type);
-    console.log(`Notification type set to: ${type}`);
+    setFormData((prev) => ({
+      ...prev,
+      notification_how_to_send: type.toString(),
+    }));
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    setFileName(file ? file.name : "No file chosen");
+  const navigate = useNavigate();
+
+  const createNotificationMutation = useMutation({
+    mutationFn: async (data: NotificationFormData) =>
+      createNotificationApi(token, data),
+    onSuccess: (data: any) => {
+      console.log(data.data.message);
+      navigate("/notifications");
+    },
+    onError: (error: any) => {
+      console.error("Submission failed", error);
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Create new data object instead of relying on state update
+    const buttonName = (e.target as HTMLButtonElement).name;
+
+    // Explicitly type the status
+    const status: NotificationStatus =
+      buttonName === "sendButton" ? "sent" : "draft";
+
+    const updatedData: NotificationFormData = {
+      ...formData,
+      notification_status: status,
+    };
+
+    try {
+      await createNotificationMutation.mutate(updatedData);
+    } catch (error) {
+      console.error("Submission error:", error);
+    }
   };
+
   return (
     <div className="grid gap-5 smd:grid-cols-2 grid-cols-1 smd:mt-10 smd:ml-10">
       <div className="flex flex-col gap-5 p-4 max-w-2xl">
@@ -33,11 +336,37 @@ const CreateNotification = () => {
           </label>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <input type="radio" name="sendTo" className="w-4 h-4" />
-              <span>All Users:</span>
+              <input
+                type="radio"
+                id="notification_send_to_all_users"
+                name="notification_send_to_users" // Same name for both radio buttons
+                value="all"
+                checked={formData.notification_send_to_all_users}
+                onChange={(e) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    notification_send_to_all_users: e.target.value === "all",
+                  }));
+                }}
+                className="w-4 h-4"
+              />
+              <span>All Users</span>
             </div>
             <div className="flex items-center gap-2">
-              <input type="radio" name="sendTo" className="w-4 h-4" />
+              <input
+                type="radio"
+                id="notification_send_not_to_all_users"
+                name="notification_send_to_users" // Same name for both radio buttons
+                value="disabled"
+                checked={!formData.notification_send_to_all_users}
+                onChange={(e) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    notification_send_to_all_users: e.target.value === "all",
+                  }));
+                }}
+                className="w-4 h-4"
+              />
               <span>Disabled</span>
             </div>
           </div>
@@ -48,26 +377,26 @@ const CreateNotification = () => {
           <span className="text-sm">Event(s)/Attendees:</span>
           <select
             className="border border-gray-border w-full p-2 rounded-sm"
-            name=""
-            id=""
+            id="notification_event_attendees"
+            name="notification_event_attendees"
+            value={formData.notification_event_attendees[0]} // Since it's single select, use first value
+            onChange={handleInputChange}
           >
-            <option value="">Events</option>
+            <option value=""></option>
+            <option value="event1">Event 1</option>
+            <option value="event2">Event 2</option>
           </select>
         </div>
 
         {/* Tags Section */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 align-center">
           <h5>Tags</h5>
+          <input type="checkbox" className="w-4 h-4" />
+
           <div>
-            <div className="flex items-center gap-2">
-              <input type="checkbox" className="w-4 h-4" />
-              <h5>Health Screening</h5>
+            <div className="flex items-center gap-2 ">
+              <label>Health Screening</label>
             </div>
-            <select name="" className="bg-primary-light2 mt-3 py-4 p-3" id="">
-              <option value="">Cancer Screening</option>
-              <option value="">Hight Bp</option>
-              <option value="">Heart Disease</option>
-            </select>
           </div>
         </div>
 
@@ -79,6 +408,11 @@ const CreateNotification = () => {
           </label>
           <input
             type="text"
+            id="notification_title"
+            name="notification_title"
+            value={formData.notification_title}
+            onChange={handleInputChange}
+            required
             className="border border-gray-border p-2 rounded"
           />
         </div>
@@ -86,13 +420,23 @@ const CreateNotification = () => {
         {/* Description */}
         <div className="flex flex-col gap-2">
           <label className="text-sm">Description</label>
-          <textarea className="border border-gray-border p-2 rounded h-32" />
+          <textarea
+            id="notification_description"
+            name="notification_description"
+            value={formData.notification_description}
+            onChange={handleInputChange}
+            className="border border-gray-border p-2 rounded h-32"
+          />
         </div>
 
         {/* Link */}
         <div className="flex flex-col gap-2">
           <label className="text-sm">Link</label>
           <input
+            id="notification_link"
+            name="notification_link"
+            value={formData.notification_link}
+            onChange={handleInputChange}
             type="text"
             className="border border-gray-border p-2 rounded"
           />
@@ -115,6 +459,15 @@ const CreateNotification = () => {
               onChange={handleFileChange}
               className="hidden"
             />
+            {imagePreview && (
+              <div className="image-preview">
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  style={{ maxWidth: "200px", maxHeight: "200px" }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
@@ -183,13 +536,11 @@ const CreateNotification = () => {
             <label className="text-sm w-70">Schedule Date & Time</label>
 
             <input
-              type="date"
-              className="border border-gray-border rounded-lg py-2 px-4 text-sm outline-none w-1/2"
-            />
-
-            <input
-              type="time"
-              className="border border-gray-border rounded-lg py-2 px-4 text-sm outline-none w-1/2"
+              type="datetime-local"
+              min={new Date().toISOString().slice(0, 16)}
+              value={scheduleDateTime}
+              onChange={(e) => handleDateTimeChange(e)}
+              className="border border-gray-border rounded-lg py-2 px-4 text-sm w-1/2"
             />
           </div>
         )}
@@ -198,7 +549,7 @@ const CreateNotification = () => {
             <div className="relative mt-10">
               <input
                 type="text"
-                className="border border-gray-border rounded-lg py-2 px-4 pl-10 text-sm outline-none w-full"
+                className="border border-gray-border rounded-lg py-2 px-4 pl-10 text-sm w-full"
                 placeholder="Search for an event"
               />
               {/* <CiSearch className="absolute top-1/2 left-3 transform -translate-y-1/2" /> */}
@@ -206,17 +557,22 @@ const CreateNotification = () => {
             <div className="flex gap-3 items-center mt-8 justify-between ml-10">
               <label className="text-sm">Category</label>
               <input
-                type="text"
-                className="border border-gray-border p-2 rounded outline-none"
+                id="notification_geo_category.miles"
+                name="notification_geo_category.miles"
+                value={formData.notification_geo_category.miles}
+                onChange={handleInputChange}
+                className="border border-gray-border p-2 rounded "
                 placeholder="5.65"
               />
               <select
-                name=""
-                className="border border-gray-border p-2 rounded outline-none w-1/3 text-sm"
-                id=""
+                id="notification_geo_category.dist_unit"
+                name="notification_geo_category.dist_unit"
+                value={formData.notification_geo_category.dist_unit}
+                className="border border-gray-border p-2 rounded "
+                onChange={handleInputChange}
               >
-                <option value="">mile</option>
-                <option value="">km</option>
+                <option value="mile">mile</option>
+                <option value="km">km</option>
               </select>
               <button className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary w-1/3">
                 Save
@@ -269,7 +625,10 @@ const CreateNotification = () => {
                   </label>
                   <input
                     type="date"
-                    className="border border-gray-border rounded-lg py-2 px-4 text-sm outline-none w-full"
+                    min={new Date().toISOString().split("T")[0]}
+                    value={geoExpirationDate}
+                    onChange={handleDateTime}
+                    className="border border-gray-border rounded-lg py-2 px-4 text-sm w-full"
                   />
                 </div>
               </div>
@@ -278,11 +637,17 @@ const CreateNotification = () => {
         )}
         <div className="flex items-center mt-8 justify-end">
           {typeNotification !== 2 && (
-            <button className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary mx-5 mt-10">
+            <button
+              name="saveButton"
+              onClick={handleSubmit}
+              className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary mx-5 mt-10"
+            >
               Save
             </button>
           )}
           <button
+            name="sendButton"
+            onClick={handleSubmit}
             className={`p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary ${
               typeNotification === 3 ? "m-auto" : "mx-5"
             } mt-10`}
