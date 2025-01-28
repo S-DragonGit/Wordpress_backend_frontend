@@ -21,7 +21,7 @@ const TableOne: React.FC<TableOneProps> = ({ columns, data }) => {
                         {columns.map((col, index) => (
                             <th 
                                 key={index} 
-                                className="px-4 py-3 text-left text-sm bg-primary-light2 font-medium"
+                                className="px-4 py-3 text-center text-sm bg-primary-light2 font-medium"
                             >
                                 {col.header}
                             </th>

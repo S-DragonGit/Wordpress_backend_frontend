@@ -117,7 +117,7 @@ export const getNotificationColumns = () => {
       header: "Audience",
       accessor: "notification_send_to_all_users",
       Cell: ({ value, row }: { value: boolean; row: NotificationFormData }) => (
-        <span className="text-sm">
+        <span className="text-sm w-[120px] inline-block overflow-hidden text-ellipsis whitespace-nowrap text-center">
           {value
             ? "All Users"
             : `${row.notification_event_attendees.length} Selected Users`}
@@ -126,25 +126,29 @@ export const getNotificationColumns = () => {
     },
     {
       header: "Date",
-      accessor: "notification_scheduled_time",
+      accessor: "notification_create_at",
       Cell: ({ value }: { value: string }) => {
         if (!value) return "-";
         const date = new Date(value);
-        return date.toLocaleString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-          hour12: true,
-        });
+        return (
+          <div className="w-[120px] overflow-hidden text-ellipsis whitespace-nowrap  text-center">
+            {date.toLocaleString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })}
+          </div>
+        );
       },
     },
     {
       header: "Type",
       accessor: "notification_how_to_send",
       Cell: ({ value }: { value: string }) => (
-        <div className="max-w-[300px] truncate">
+        <div className="w-[150px] overflow-hidden text-ellipsis whitespace-nowrap text-center">
           {`${
             value === "0"
               ? "Simple"
@@ -155,37 +159,44 @@ export const getNotificationColumns = () => {
         </div>
       ),
     },
-
     {
       header: "Description",
       accessor: "notification_description",
       Cell: ({ value }: { value: string }) => (
-        <div className="max-w-[300px] truncate">{value}</div>
+        <div className="w-[180px] h-[60px] overflow-hidden flex items-center justify-center text-center ">
+          <p className="line-clamp-3">{value}</p>
+        </div>
       ),
     },
     {
       header: "Image",
       accessor: "notification_image",
       Cell: ({ value }: { value: string }) => (
-        <div className="max-w-[300px]">
+        <div className="w-[120px] h-[60px] flex items-center justify-center text-center">
           {value ? (
             <img
-              src={`data:image/jpeg;base64,${value}`}
+              src={value}
               alt="Notification"
-              className="max-w-full h-auto"
+              className="object-cover w-full h-full text-center"
+              style={{
+                maxWidth: "120px",
+                maxHeight: "120px",
+                objectFit: "cover",
+              }}
             />
           ) : (
-            <span>No image</span>
+            <span className="text-gray-400">No image</span>
           )}
         </div>
       ),
     },
-
     {
       header: "Status",
       accessor: "notification_status",
       Cell: ({ value }: { value: string }) => (
-        <div className="max-w-[300px] truncate">{value}</div>
+        <div className="w-[100px] overflow-hidden text-ellipsis whitespace-nowrap text-center">
+          {value}
+        </div>
       ),
     },
   ];

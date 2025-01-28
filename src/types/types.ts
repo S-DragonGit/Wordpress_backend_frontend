@@ -25,9 +25,10 @@ export interface NotificationFormData {
   notification_event_attendees: string[];
   notification_tags: NotificationTags;
   notification_link: string;
-  notification_image: File | null | string;
+  notification_image: string;
   notification_how_to_send: string; // 0: simple, 1: scheduled, 2: geo-fenced
-  notification_geo_category: GeoCategory;
+  notification_geo_category: GeoCategory | null;
   notification_geo_fence_expiration_date: string | null;
   notification_scheduled_time: string | null;
+  notification_create_at: string | null;
 }
