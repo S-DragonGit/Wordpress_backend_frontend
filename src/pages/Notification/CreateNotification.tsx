@@ -7,12 +7,12 @@ import { selectCurrentId, selectCurrentToken } from "../../app/redux/userSlice";
 import { useNavigate } from "react-router-dom";
 import { NotificationFormData } from "../../types/types";
 import { NotificationStatus } from "../../types/types";
+import { GeoCategory } from "../../types/types";
 
 const CreateNotification = () => {
-  
-
   const id = useSelector(selectCurrentId);
   const token = useSelector(selectCurrentToken);
+  const nowDate = new Date();
 
   // Initial state
   const [formData, setFormData] = useState<NotificationFormData>({
@@ -33,8 +33,9 @@ const CreateNotification = () => {
       miles: 5.65,
       dist_unit: "miles",
     },
-    notification_geo_fence_expiration_date: null,
-    notification_scheduled_time: null,
+    notification_geo_fence_expiration_date: nowDate.toISOString().slice(0, 10),
+    notification_scheduled_time: nowDate.toISOString().slice(0, 16),
+    notification_create_at: null,
   });
 
   const [scheduleDateTime, setScheduleDateTime] = useState<string>("");
@@ -77,9 +78,12 @@ const CreateNotification = () => {
       setFormData((prev) => ({
         ...prev,
         notification_geo_category: {
-          ...prev.notification_geo_category,
-          [field]: field === "miles" || field === "km" ? Number(value) : value,
-        },
+          ...(prev.notification_geo_category || {
+            miles: 5.65,
+            dist_unit: "miles",
+          }), // Default values
+          [field]: field === "miles" ? Number(value) : value,
+        } as GeoCategory,
       }));
       return;
     }
@@ -186,6 +190,8 @@ const CreateNotification = () => {
         reader.readAsDataURL(file);
       });
 
+      console.log("base64String", base64String);
+
       setFormData((prev) => ({
         ...prev,
         notification_image: base64String,
@@ -212,13 +218,13 @@ const CreateNotification = () => {
   const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedDateTime = new Date(e.target.value);
     const now = new Date();
-    
+
     // Compare full datetime, not just date
     if (selectedDateTime < now) {
-        alert('Please select a future date and time');
-        return;
+      alert("Please select a future date and time");
+      return;
     }
-    
+
     setScheduleDateTime(e.target.value);
     // If you need to update form data as well
     setFormData((prev) => ({
@@ -277,20 +283,57 @@ const CreateNotification = () => {
     },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (
+    e: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
 
-    // Create new data object instead of relying on state update
-    const buttonName = (e.target as HTMLButtonElement).name;
+    // Get the button that was clicked
+    let buttonName: string | undefined;
 
-    // Explicitly type the status
+    if (e.type === "click") {
+      // Handle button click
+      buttonName = (e.currentTarget as HTMLButtonElement).name;
+    }
+
     const status: NotificationStatus =
       buttonName === "sendButton" ? "sent" : "draft";
 
-    const updatedData: NotificationFormData = {
+    const now = new Date();
+    const formattedDate = now.toISOString().slice(0, 16);
+
+    let updatedData: NotificationFormData = {
       ...formData,
       notification_status: status,
+      notification_create_at: formattedDate,
     };
+
+    // Rest of your switch statement and try/catch block remains the same
+    switch (updatedData.notification_how_to_send) {
+      case "0": // simple
+        updatedData = {
+          ...updatedData,
+          notification_geo_category: null,
+          notification_geo_fence_expiration_date: null,
+          notification_scheduled_time: null,
+        };
+        break;
+
+      case "1": // scheduled
+        updatedData = {
+          ...updatedData,
+          notification_geo_category: null,
+          notification_geo_fence_expiration_date: null,
+        };
+        break;
+
+      case "2": // geo-fenced
+        updatedData = {
+          ...updatedData,
+          notification_scheduled_time: null,
+        };
+        break;
+    }
 
     try {
       await createNotificationMutation.mutate(updatedData);
@@ -534,7 +577,7 @@ const CreateNotification = () => {
               <input
                 id="notification_geo_category.miles"
                 name="notification_geo_category.miles"
-                value={formData.notification_geo_category.miles}
+                value={formData.notification_geo_category?.miles ?? 5.65}
                 onChange={handleInputChange}
                 className="border border-gray-border p-2 rounded "
                 placeholder="5.65"
@@ -542,14 +585,18 @@ const CreateNotification = () => {
               <select
                 id="notification_geo_category.dist_unit"
                 name="notification_geo_category.dist_unit"
-                value={formData.notification_geo_category.dist_unit}
+                value={formData.notification_geo_category?.dist_unit ?? "miles"}
                 className="border border-gray-border p-2 rounded "
                 onChange={handleInputChange}
               >
                 <option value="mile">mile</option>
                 <option value="km">km</option>
               </select>
-              <button className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary w-1/3">
+              <button
+                name="saveButton"
+                onClick={handleSubmit}
+                className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary mx-5 mt-10"
+              >
                 Save
               </button>
             </div>
