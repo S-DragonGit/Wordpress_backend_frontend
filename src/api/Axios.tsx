@@ -3,7 +3,7 @@ import axios from "axios";
 const AxiosInstance = (token: string | null) => {
   const instance = axios.create({
     // baseURL: "http://localhost/wordpress/index.php/api/wp",
-    baseURL: "https://rafiki.momoagency.co/index.php/api/wp1",
+    baseURL: "https://rafiki.momoagency.co/index.php/api/wp",
     headers: {
       Authorization: token ? `Bearer ${token}` : "",
     },
