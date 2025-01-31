@@ -31,4 +31,7 @@ export interface NotificationFormData {
   notification_geo_fence_expiration_date: string | null;
   notification_scheduled_time: string | null;
   notification_create_at: string | null;
+  post_id: number | null;
 }
+
+

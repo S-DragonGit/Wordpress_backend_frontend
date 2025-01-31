@@ -29,7 +29,7 @@ const NavigatorView = () => {
                     </div>
                 </div>
                 <div className='col-span-2 ' >
-                    <TableOne columns={navigatiorColumn} data={eventPublished} />
+                    <TableOne columns={navigatiorColumn} data={eventPublished}/>
                 </div>
             </div>
             <div className=" w-[280px]  text-sm">
