@@ -17,13 +17,13 @@ const NotificationModal = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
+  
   // Correct ✅
   const notification = useSelector(
     (state: { notification: NotificationState }) =>
       selectNotificationById(state, id as string)
   );
-
+  
   const defaultFormData: NotificationFormData = {
     user_id: 0,
     notification_title: "",
@@ -47,17 +47,30 @@ const NotificationModal = () => {
     notification_create_at: null,
     post_id: null,
   };
-
+  
   const [formData, setFormData] = useState<NotificationFormData>(
     notification ?? defaultFormData
   );
-
+  
   const [scheduleDateTime, setScheduleDateTime] = useState<string>("");
   const [geoExpirationDate, setGeoExpirationDate] = useState<string>("");
-
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [fileName, setFileName] = useState("No file chosen");
+  const [typeNotification, setTypeNotification] = useState(0);
+  
   const isLoading = useSelector(selectNotificationLoading);
   const error = useSelector(selectNotificationError);
-
+  
+  useEffect(() => {
+    const now = new Date();
+    // Format: YYYY-MM-DDThh:mm
+    const formattedDateTime = now.toISOString().slice(0, 16);
+    setScheduleDateTime(formattedDateTime);
+    const formattedDate = now.toISOString().slice(0, 10);
+    setGeoExpirationDate(formattedDate);
+  }, []);
+  
   useEffect(() => {
     if (notification) {
       dispatch(setSelectedNotification(notification));
@@ -101,6 +114,7 @@ const NotificationModal = () => {
       </div>
     );
   }
+
 
   // Initial state
 
@@ -174,10 +188,6 @@ const NotificationModal = () => {
     }));
   };
 
-  useEffect(() => {
-    console.log("all updated:", formData);
-  }, [formData]);
-
   // Handle file input
   interface FileValidationResult {
     isValid: boolean;
@@ -216,7 +226,6 @@ const NotificationModal = () => {
   };
 
   // Optional: Add preview functionality
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -268,15 +277,6 @@ const NotificationModal = () => {
     }
   };
 
-  useEffect(() => {
-    const now = new Date();
-    // Format: YYYY-MM-DDThh:mm
-    const formattedDateTime = now.toISOString().slice(0, 16);
-    setScheduleDateTime(formattedDateTime);
-    const formattedDate = now.toISOString().slice(0, 10);
-    setGeoExpirationDate(formattedDate);
-  }, []);
-
   // Handle date/time inputs
   const handleDateTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedDateTime = new Date(e.target.value);
@@ -313,10 +313,6 @@ const NotificationModal = () => {
       notification_geo_fence_expiration_date: e.target.value,
     }));
   };
-
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [fileName, setFileName] = useState("No file chosen");
-  const [typeNotification, setTypeNotification] = useState(0);
 
   const handleFileButtonClick = () => {
     if (fileInputRef.current) {
