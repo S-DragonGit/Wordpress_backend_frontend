@@ -131,7 +131,7 @@ export const getNotificationColumns = () => {
         if (!value) return "-";
         const date = new Date(value);
         return (
-          <div className="w-[120px] overflow-hidden text-ellipsis whitespace-nowrap  text-center">
+          <div className="w-[120px] overflow-hidden text-ellipsis whitespace-nowrap  text-center w-full">
             {date.toLocaleString("en-US", {
               year: "numeric",
               month: "long",
@@ -148,7 +148,7 @@ export const getNotificationColumns = () => {
       header: "Type",
       accessor: "notification_how_to_send",
       Cell: ({ value }: { value: string }) => (
-        <div className="w-[150px] overflow-hidden text-ellipsis whitespace-nowrap text-center">
+        <div className="w-[150px] overflow-hidden text-ellipsis whitespace-nowrap text-center w-full">
           {`${
             value === "0"
               ? "Simple"
@@ -163,7 +163,7 @@ export const getNotificationColumns = () => {
       header: "Description",
       accessor: "notification_description",
       Cell: ({ value }: { value: string }) => (
-        <div className="w-[180px] h-[60px] overflow-hidden flex items-center justify-center text-center ">
+        <div className="w-[180px] h-[60px] overflow-hidden flex items-center justify-center text-center  w-full">
           <p className="line-clamp-3">{value}</p>
         </div>
       ),
@@ -172,7 +172,7 @@ export const getNotificationColumns = () => {
       header: "Image",
       accessor: "notification_image",
       Cell: ({ value }: { value: string }) => (
-        <div className="w-[120px] h-[60px] flex items-center justify-center text-center">
+        <div className="w-[120px] h-[60px] flex items-center justify-center text-center w-full">
           {value ? (
             <img
               src={value}
@@ -194,7 +194,7 @@ export const getNotificationColumns = () => {
       header: "Status",
       accessor: "notification_status",
       Cell: ({ value }: { value: string }) => (
-        <div className="w-[100px] overflow-hidden text-ellipsis whitespace-nowrap text-center">
+        <div className="w-[100px] overflow-hidden text-ellipsis whitespace-nowrap text-center w-full">
           {value}
         </div>
       ),

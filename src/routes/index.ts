@@ -4,6 +4,7 @@ const EventManagement = lazy(() => import('../pages/EventManagement/EventManagem
 const NavigatorMng = lazy(() => import('../pages/NavigatorMng/NavigatorMng'));
 const Notification = lazy(() => import('../pages/Notification/Notification'));
 const CreateNotification = lazy(() => import('../pages/Notification/CreateNotification'));
+const NotificationModal = lazy(() => import('../pages/Notification/NotificationModal'));
 const CreateEvents = lazy(() => import('../pages/EventManagement/CreateEvents'));
 
 const coreRoutes = [
@@ -36,6 +37,11 @@ const coreRoutes = [
         path: '/notifications/create',
         title: 'Notification',
         component: CreateNotification,
+    },
+    {
+        path: '/notifications/:id',
+        title: 'NotificationModal',
+        component: NotificationModal,
     },
 ];
 

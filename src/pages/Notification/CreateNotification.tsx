@@ -36,6 +36,7 @@ const CreateNotification = () => {
     notification_geo_fence_expiration_date: nowDate.toISOString().slice(0, 10),
     notification_scheduled_time: nowDate.toISOString().slice(0, 16),
     notification_create_at: null,
+    post_id: null,
   });
 
   const [scheduleDateTime, setScheduleDateTime] = useState<string>("");

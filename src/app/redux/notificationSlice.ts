@@ -1,8 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { NotificationFormData } from "../../types/types";
 
-interface NotificationState {
+export interface NotificationState {
     notifications: NotificationFormData[];
+    selectedNotification: NotificationFormData | null;
     isLoading: boolean;
     error: string | null;
 }
@@ -28,6 +29,10 @@ export const notificationSlice = createSlice({
             state.isLoading = false;
             state.error = null;
         },
+        // Set selected notification
+        setSelectedNotification(state, action) {
+            state.selectedNotification = action.payload;
+        },
     },
 });
 
@@ -35,11 +40,18 @@ export const {
     setLoading,
     setError,
     setNotifications,
+    setSelectedNotification,
 } = notificationSlice.actions;
 
 // Selectors
 export const selectAllNotifications = (state: { notification: NotificationState }) =>
     state.notification.notifications;
+
+export const selectNotificationById = (state: { notification: NotificationState }, id: string) =>
+    state.notification.notifications.find(notification => notification.post_id?.toString() === id);
+
+export const selectSelectedNotification = (state: { notification: NotificationState }) =>
+    state.notification.selectedNotification;
 
 export const selectNotificationLoading = (state: { notification: NotificationState }) =>
     state.notification.isLoading;
