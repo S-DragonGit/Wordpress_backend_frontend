@@ -403,7 +403,7 @@ const NotificationModal = () => {
       console.log(formData);
       console.log(updatedData);
     } catch (error) {
-      console.error("Submission error:", error);
+      console.error("Submission error: ", error);
     }
   };
 
