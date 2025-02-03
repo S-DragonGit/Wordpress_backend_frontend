@@ -1,6 +1,9 @@
 import { icons } from "../../constants";
 import { useRef, useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { updateNotificationApi } from "../../services/notifications";
 import { useNavigate, useParams } from "react-router-dom";
+import { selectCurrentToken } from "../../app/redux/userSlice";
 import { NotificationFormData } from "../../types/types";
 import { NotificationStatus } from "../../types/types";
 import { GeoCategory } from "../../types/types";
@@ -15,6 +18,7 @@ import { NotificationState } from "../../app/redux/notificationSlice";
 
 const NotificationModal = () => {
   const { id } = useParams();
+  const token = useSelector(selectCurrentToken);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
@@ -26,6 +30,7 @@ const NotificationModal = () => {
   
   const defaultFormData: NotificationFormData = {
     user_id: 0,
+    notification_id: null,
     notification_title: "",
     notification_description: "",
     notification_status: "draft",
@@ -54,11 +59,11 @@ const NotificationModal = () => {
   
   const [scheduleDateTime, setScheduleDateTime] = useState<string>("");
   const [geoExpirationDate, setGeoExpirationDate] = useState<string>("");
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(formData.notification_image === "" ? "" : formData.notification_image);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [fileName, setFileName] = useState("No file chosen");
-  const [typeNotification, setTypeNotification] = useState(0);
-  
+  const [typeNotification, setTypeNotification] = useState(Number(formData.notification_how_to_send));
+
   const isLoading = useSelector(selectNotificationLoading);
   const error = useSelector(selectNotificationError);
   
@@ -268,7 +273,7 @@ const NotificationModal = () => {
         ...prev,
         notification_image: base64String,
       }));
-      setFileName(file.name);
+      setFileName(file.name === "No file chosen" ? formData.notification_image : file.name);
     } catch (error) {
       console.error("Error processing file:", error);
       alert("Error processing file. Please try again.");
@@ -328,6 +333,18 @@ const NotificationModal = () => {
     }));
   };
 
+  const updateNotificationMutation = useMutation({
+    mutationFn: async (data: NotificationFormData) =>
+      updateNotificationApi(token, data),
+    onSuccess: (data: any) => {
+      console.log(data.data.message);
+      navigate("/notifications");
+    },
+    onError: (error: any) => {
+      console.error("Submission failed", error);
+    },
+  });
+
   const handleSubmit = async (
     e: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>
   ) => {
@@ -349,6 +366,7 @@ const NotificationModal = () => {
 
     let updatedData: NotificationFormData = {
       ...formData,
+      notification_id: formData.post_id,
       notification_status: status,
       notification_create_at: formattedDate,
     };
@@ -381,9 +399,11 @@ const NotificationModal = () => {
     }
 
     try {
-      // await updateNotificationMutation.mutate(updatedData);
+      await updateNotificationMutation.mutate(updatedData);
+      console.log(formData);
+      console.log(updatedData);
     } catch (error) {
-      console.error("Submission error: ", error);
+      console.error("Submission error:", error);
     }
   };
 
