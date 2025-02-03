@@ -383,7 +383,7 @@ const NotificationModal = () => {
     try {
       // await updateNotificationMutation.mutate(updatedData);
     } catch (error) {
-      console.error("Submission error:", error);
+      console.error("Submission error: ", error);
     }
   };
 
