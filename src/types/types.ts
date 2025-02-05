@@ -34,4 +34,30 @@ export interface NotificationFormData {
   post_id: number | null;
 }
 
-
+export interface EventFormData {
+  event_title: string;
+  event_description: string;
+  event_start_date: string | null;
+  event_start_time: string | null;
+  event_end_date: string | null;
+  event_end_time: string | null;
+  event_is_virtual: boolean;
+  event_meeting_link: string;
+  event_organizer: string;
+  event_location: string;
+  event_image: string;
+  user_id: number | null;
+  event_status: "publish" | "draft";
+  event_recurring: boolean;
+  event_repeat_every: string;
+  event_repeat_on: string;
+  event_time: string | null;
+  event_never: boolean;
+  event_on: string;
+  event_after: number;
+  event_members: number[];
+  event_modify_event: boolean;
+  event_invite_others: boolean;
+  event_view_member_list: boolean;
+  event_category_slugs: string[];
+}

@@ -1,6 +1,6 @@
 import images from '../constants/images'
 import DatePicker from '../components/DatePicker'
-import TableOne from "../components/TableOne";
+import TableOne from "./TableOne";
 import { navigatiorColumn } from '../app/columns';
 import { eventPublished } from '../app/list';
 import FullCalendar from "@fullcalendar/react";
