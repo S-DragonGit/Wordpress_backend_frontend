@@ -189,24 +189,24 @@ export const calendarCategories = [
 ];
 
 export const formFields: FormOneProps[] = [
-  { label: 'Event Title', type: 'text', name: 'eventTitle', isRequired: true },
+  { label: 'Event Title', type: 'text', name: 'event_title', isRequired: true },
   { label: 'Description', type: 'textarea', name: 'description' },
-  { label: 'Event Date', type: 'text', name: 'eventDate' },
+  { label: 'Event Date', type: 'text', name: 'event_date' },
   {
     label: 'Is this meeting virtual?',
     type: 'radio',
-    name: 'meeting',
+    name: 'is_virtual',
     options: [
       { label: 'Yes', value: 'yes', defaultChecked: true },
       { label: 'No', value: 'no' },
     ],
   },
-  { label: 'Meeting Link', type: 'text', name: 'meetingLink' },
-  { label: 'Event Location', type: 'text', name: 'EventLocation' },
+  { label: 'Meeting Link', type: 'text', name: 'meeting_link' },
+  { label: 'Event Location', type: 'text', name: 'event_location' },
 ];
 
 export const formFieldsTwo: FormOneProps[] = [
-  { label: 'Members', type: 'text', name: 'eventTitle', isRequired: true },
+  { label: 'Members', type: 'text', name: 'members', isRequired: true },
   {
     label: 'Member Permission',
     type: 'checkbox',
