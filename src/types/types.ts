@@ -18,6 +18,7 @@ export type NotificationStatus = "draft" | "scheduled" | "sent";
 // Main interface for the notification data
 export interface NotificationFormData {
   user_id: number;
+  notification_id: number | null,
   notification_title: string;
   notification_description: string;
   notification_status: NotificationStatus;

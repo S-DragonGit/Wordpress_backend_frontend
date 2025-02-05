@@ -17,6 +17,7 @@ const CreateNotification = () => {
   // Initial state
   const [formData, setFormData] = useState<NotificationFormData>({
     user_id: id,
+    notification_id: null,
     notification_title: "",
     notification_description: "",
     notification_status: "draft",
@@ -162,7 +163,6 @@ const CreateNotification = () => {
     const file = event.target.files?.[0];
 
     if (!file) return;
-
     const validationResult = validateImageFile(file);
 
     if (!validationResult.isValid) {
