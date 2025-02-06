@@ -40,6 +40,7 @@ export default userSlice.reducer;
 
 export const selectCurrentToken = (state: { user: { Token: string } }) =>
     state.user.Token;
+
 export const selectCurrentName = (state: { user: { UserName: string } }) =>
     state.user.UserName;
 

@@ -18,7 +18,7 @@ export type NotificationStatus = "draft" | "scheduled" | "sent";
 // Main interface for the notification data
 export interface NotificationFormData {
   user_id: number;
-  notification_id: number | null,
+  // notification_id: number | null,
   notification_title: string;
   notification_description: string;
   notification_status: NotificationStatus;
@@ -35,6 +35,7 @@ export interface NotificationFormData {
   post_id: number | null;
 }
 
+export type EventStatus = "publish" | "draft";
 export interface EventFormData {
   event_title: string;
   event_description: string;
@@ -48,7 +49,7 @@ export interface EventFormData {
   event_location: string;
   event_image: string;
   user_id: number | null;
-  event_status: "publish" | "draft";
+  event_status: EventStatus;
   event_recurring: boolean;
   event_repeat_every: string;
   event_repeat_on: string;
@@ -61,4 +62,5 @@ export interface EventFormData {
   event_invite_others: boolean;
   event_view_member_list: boolean;
   event_category_slugs: string[];
+  post_id: number | null;
 }

@@ -8,11 +8,13 @@ import CalendarView from "../../components/FullCalendar";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { fetchEvents } from "../../services/events";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { selectCurrentId, selectCurrentToken } from "../../app/redux/userSlice";
-import { updateEventStatusApi } from "../../services/events";
+import { updateEventStatusApi, getEventById } from "../../services/events";
 import TableDraft from "../../components/TableDraft";
 import TablePublish from "../../components/TablePublish";
+import { setEvents, setCurrentEvent } from "../../app/redux/eventSlice";
+import { useNavigate } from "react-router-dom";
 
 const EventManagement = () => {
   const switchList = ["Published", "Drafts"];
@@ -31,12 +33,18 @@ const EventManagement = () => {
     queryFn: () => fetchEvents(token, { user_id: id }),
     enabled: !!token,
   });
+  // console.log(events);
   const eventList = events?.data?.event_list;
+  const dispatch = useDispatch();
+  dispatch(setEvents(eventList));
+  // console.log(eventList);
+
 
   const updateEventStatusMutation = useMutation({
     mutationFn: (data: any) => updateEventStatusApi(token, data),
     onSuccess: (data) => {
-      console.log("Event stasus updated successfully:", data);
+      // console.log("Event stasus updated successfully:", data);
+      dispatch(setEvents(data));
     },
     onError: (error) => {
       console.error("Error creating event:", error);
@@ -55,6 +63,31 @@ const EventManagement = () => {
     } catch (error) {
       console.error("Submission error for updating", error);
     }
+  };
+
+  const navigate = useNavigate();
+  const getEvent = useMutation({
+      mutationFn: (data: any) => getEventById(token, data),
+      onSuccess: (data) => {
+        // console.log("Event stasus updated successfully:", data.data.data);
+        dispatch(setCurrentEvent(data.data.data));
+        console.log(data.data.data);
+      },
+      onError: (error) => {
+        console.error("Error creating event:", error);
+      },
+    });
+  const handleOnViewDetails = async (event: any) => {
+    let id_data: any = {
+      user_id: id,
+      post_id: String(Number(event.ID) + 1),
+    }
+    try {
+      await getEvent.mutate(id_data);
+    } catch (error) {
+      console.error("Submission error:", error);
+    }
+    navigate(`/eventManagement/${event.ID}`);
   };
 
   return (
@@ -92,12 +125,13 @@ const EventManagement = () => {
             {isLoading ? (
               <p className="items-center">loading...</p>
             ) : switchTwo === "Published" ? (
-              <TablePublish data={eventList} columns={eventDraftedColumns} />
+              <TablePublish data={eventList} columns={eventPublishedColumns} onViewDetails={handleOnViewDetails} />
             ) : (
               <TableDraft
                 data={eventList}
-                columns={eventPublishedColumns}
+                columns={eventDraftedColumns}
                 onPublish={handleOnPublish}
+                onViewDetails={handleOnViewDetails}
               />
             )}
           </div>
