@@ -30,7 +30,7 @@ const NotificationModal = () => {
   
   const defaultFormData: NotificationFormData = {
     user_id: 0,
-    notification_id: null,
+    // notification_id: null,
     notification_title: "",
     notification_description: "",
     notification_status: "draft",
@@ -366,7 +366,7 @@ const NotificationModal = () => {
 
     let updatedData: NotificationFormData = {
       ...formData,
-      notification_id: formData.post_id,
+      post_id: formData.post_id,
       notification_status: status,
       notification_create_at: formattedDate,
     };

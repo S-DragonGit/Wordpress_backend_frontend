@@ -17,7 +17,7 @@ const CreateNotification = () => {
   // Initial state
   const [formData, setFormData] = useState<NotificationFormData>({
     user_id: id,
-    notification_id: null,
+    // notification_id: null,
     notification_title: "",
     notification_description: "",
     notification_status: "draft",

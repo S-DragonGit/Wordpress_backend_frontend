@@ -9,9 +9,10 @@ interface Column {
 interface TablePublishProps {
   columns: Column[];
   data: any[] | undefined;
+  onViewDetails: (row: any) => void;
 }
 
-const TablePublish: React.FC<TablePublishProps> = ({ columns, data }) => {
+const TablePublish: React.FC<TablePublishProps> = ({ columns, data, onViewDetails }) => {
   const publishPosts = data?.filter(row => row.post_status === "publish");
 
   return (
@@ -37,9 +38,19 @@ const TablePublish: React.FC<TablePublishProps> = ({ columns, data }) => {
             >
               {columns.map((col, colIndex) => (
                 <td key={colIndex} className="px-4 py-3 text-center">
-                  {col.Cell
+                  {/* {col.Cell
                     ? col.Cell({ value: row[col.accessor], row })
-                    : row[col.accessor]}
+                    : row[col.accessor]} */}
+                  {
+                  col.accessor === "View Details" ?
+                  (<button
+                    onClick={() => onViewDetails(row)}
+                    className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-light3 hover:text-primary transition-colors"
+                  >
+                    {col.accessor}
+                  </button>) :
+                  row[col.accessor]
+                  }
                 </td>
               ))}
             </tr>

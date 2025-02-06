@@ -54,7 +54,10 @@ export const eventPublishedColumns = [
         accessor: "Members",
         Cell: (row: { Members: any[]; }) => row?.Members?.join(", "),
     },
-    
+    {
+        header: "Action",
+        accessor: "View Details",
+    },
 ];
 
 
@@ -83,6 +86,14 @@ export const eventDraftedColumns = [
         header: "Member(s)",
         accessor: "Members", // Maps to the `Members` field in data
         Cell: (row: any) => row?.Members?.join(", "), // Custom rendering logic for member list
+    },
+    {
+        header: "Actions",
+        accessor: "Publish",
+    },
+    {
+        header: "Action",
+        accessor: "View Details",
     },
 ];
 export const navigatiorColumn = [
@@ -120,6 +131,20 @@ export const navigatiorColumn = [
             >
                 Publish
             </button>
+        ),
+    },
+    {
+        header: "111",
+        accessor: "111",
+        Cell: () => (
+            <td className="px-4 py-3 text-center">
+                <button
+                    // onClick={() => onViewDetails(row)}
+                    className={`bg-primary  px-4 py-2 rounded-md hover:bg-primary-light3 hover:text-primary text-white  transition-colors`}
+                >
+                    View Details
+                </button>
+            </td>
         ),
     },
 ];

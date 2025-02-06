@@ -40,6 +40,7 @@ const CreateEvents: React.FC = () => {
     event_invite_others: false,
     event_view_member_list: false,
     event_category_slugs: [],
+    post_id: null,
   });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);

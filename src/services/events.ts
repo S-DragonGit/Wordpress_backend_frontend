@@ -22,6 +22,31 @@ export const createEventApi = async (token: string, data: any) => {
     }
 };
 
+export const updateEventApi = async (token: string, data: any) => {
+    try {
+        console.log("Request body: ", data);
+        console.log("Token: ", token);
+        const response = await postData("/v2/update/event", data, token);
+        return response;
+    } catch (error: any) {
+        console.error("API Error:", error.response?.data || error.message);
+        throw error; // Rethrow the error for proper error handling
+    }
+};
+
+
+export const getEventById = async (token: string, data: any) => {
+    try {
+        console.log("Request body: ", data);
+        console.log("Token: ", token);
+        const response = await postData("/v2/get/event", data, token);
+        return response;
+    } catch (error: any) {
+        console.error("API Error:", error.response?.data || error.message);
+        throw error; // Rethrow the error for proper error handling
+    }
+};
+
 export const updateEventStatusApi = async (token: string, data: any) => {
     try {
         console.log("Request body: ", data);
