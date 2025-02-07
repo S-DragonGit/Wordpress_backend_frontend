@@ -3,24 +3,24 @@ import { useEffect, useState } from "react";
 import { meetingTags } from "../../app/list";
 import RecurringComponent from "../../components/Recurring"; // Import RecurringComponent
 import { useSelector } from "react-redux";
-import { selectCurrentId, selectCurrentToken} from "../../app/redux/userSlice";
+import { selectCurrentId, selectCurrentToken } from "../../app/redux/userSlice";
 import { useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { updateEventApi } from "../../services/events";
 import { useNavigate } from "react-router-dom";
 import { EventFormData, EventStatus } from "../../types/types";
 import { EventState, selectCurrentEvent } from "../../app/redux/eventSlice";
+import toast from "react-hot-toast";
 // import { getEventById } from "../../services/events"
 // import { useDispatch } from "react-redux";
 
 const EventModal: React.FC = () => {
-
   const token = useSelector(selectCurrentToken);
   // const data = useSelector(selectCurrentId);
   // const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const defaultFormData : EventFormData = {
+  const defaultFormData: EventFormData = {
     event_title: "",
     event_description: "",
     event_start_date: "",
@@ -48,13 +48,18 @@ const EventModal: React.FC = () => {
     event_category_slugs: [],
     post_id: null,
   };
-  
-  const event = useSelector(
-    (state: { event: EventState }) =>
-      selectCurrentEvent(state)
+
+  const event = useSelector((state: { event: EventState }) =>
+    selectCurrentEvent(state)
   );
 
   const [isDraft, setIsDraft] = useState<string | undefined>("");
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventStartDate, setEventStartDate] = useState("");
+  const [eventStartTime, setEventStartTime] = useState("");
+  // const [eventEndDate, setEventEndDate] = useState('');
+  const [eventEndTime, setEventEndTime] = useState("");
+  const [eventDesc, setEventDesc] = useState("");
 
   const [formData, setFormData] = useState<EventFormData>(
     event ?? defaultFormData
@@ -71,8 +76,8 @@ const EventModal: React.FC = () => {
   // }, [event])
 
   useEffect(() => {
-    setIsDraft(event?.event_status)
-  }, [event])
+    setIsDraft(event?.event_status);
+  }, [event]);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   // const [fileName, setFileName] = useState("No file chosen");
@@ -160,7 +165,9 @@ const EventModal: React.FC = () => {
   };
 
   // Optional: Add preview functionality
-  const [imagePreview, setImagePreview] = useState<string | null>(formData.event_image || null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    formData.event_image || null
+  );
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -172,7 +179,7 @@ const EventModal: React.FC = () => {
     const validationResult = validateImageFile(file);
 
     if (!validationResult.isValid) {
-      alert(validationResult.error);
+      toast(validationResult.error ?? "An error occurred");
       event.target.value = "";
       setImagePreview(null);
       return;
@@ -214,8 +221,9 @@ const EventModal: React.FC = () => {
 
   const updateEventMutation = useMutation({
     mutationFn: async (data: EventFormData) => updateEventApi(token, data),
-    onSuccess: () => {
+    onSuccess: (data) => {
       navigate("/eventManagement");
+      toast(data.data.message);
     },
     onError: (error: any) => {
       console.error("Submission failed", error);
@@ -225,42 +233,64 @@ const EventModal: React.FC = () => {
   const id = useSelector(selectCurrentId);
 
   const handleSubmit = async (
-      e: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>
-    ) => {
-      e.preventDefault();
-  
-      // Get the button that was clicked
-      let buttonName: string | undefined;
-  
-      if (e.type === "click") {
-        // Handle button click
-        buttonName = (e.currentTarget as HTMLButtonElement).name;
-      }
-      
-      console.log(formData.post_id);
+    e: React.MouseEvent<HTMLButtonElement> | React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
 
-      const status: EventStatus =
-        buttonName === "updateandpublish" ? "publish" : "draft";
-      console.log(status);
-      const updatedData: EventFormData = {
-            ...formData,
-            post_id: Number(formData.post_id) - 1,
-            event_status: status,
-            user_id: id
-          };
-          console.log(formData.post_id);
-      try {
+    // Get the button that was clicked
+    let buttonName: string | undefined;
+
+    if (e.type === "click") {
+      // Handle button click
+      buttonName = (e.currentTarget as HTMLButtonElement).name;
+    }
+
+    console.log(formData);
+
+    const status: EventStatus =
+      buttonName === "updateandpublish" ? "publish" : "draft";
+    console.log(status);
+    const updatedData: EventFormData = {
+      ...formData,
+      post_id: Number(formData.post_id) - 1,
+      event_status: status,
+      user_id: id,
+    };
+    console.log(formData.post_id);
+
+    try {
+      if (
+        formData.event_title === "" ||
+        formData.event_start_date === "" ||
+        formData.event_start_time === "" ||
+        formData.event_description === "" ||
+        formData.event_end_time === ""
+      ) {
+        if (formData.event_title === "") setEventTitle("Required!");
+        if (formData.event_start_date === "") setEventStartDate("Required!");
+        if (formData.event_start_time === "") setEventStartTime("Required!");
+        // if(!formData.event_end_date) setEventEndDate("Required!")
+        if (formData.event_description === "") setEventDesc("Required!");
+        if (formData.event_end_date === "") setEventEndTime("Required!");
+        toast("Required fields should be input! Please type.");
+        console.log(formData);
+      } else {
         await updateEventMutation.mutate(updatedData);
         console.log(formData);
         console.log(updatedData);
-      } catch (error) {
-        console.error("Submission error:", error);
       }
-    };
-
-    const backSubmit = () => {
-      navigate("/eventManagement");
+    } catch (error) {
+      console.error("Submission error:", error);
     }
+  };
+
+  const backSubmit = () => {
+    navigate("/eventManagement");
+  };
+
+  useEffect(() => {
+    setFormData(formData);
+  }, [formData]);
 
   return (
     <>
@@ -279,7 +309,9 @@ const EventModal: React.FC = () => {
                 value={formData.event_title}
                 onChange={handleInputChange}
                 required
-                className="border w-[300px] border-gray-border p-2 rounded"
+                className={`border w-[300px] p-2 rounded ${
+                  eventTitle ? "border-red-600" : "border-gray-border"
+                }`}
               />
             </div>
             <div className="flex gap-15 justify-between">
@@ -292,7 +324,9 @@ const EventModal: React.FC = () => {
                 value={formData.event_description}
                 onChange={handleInputChange}
                 required
-                className="border w-[300px] border-gray-border p-2 rounded"
+                className={`border w-[300px] p-2 rounded ${
+                  eventDesc ? "border-red-600" : "border-gray-border"
+                }`}
               />
             </div>
             <div className="flex gap-15 justify-between">
@@ -306,7 +340,9 @@ const EventModal: React.FC = () => {
                 value={formData.event_start_date ?? ""}
                 onChange={handleInputChange}
                 required
-                className="border w-[300px] border-gray-border p-2 rounded"
+                className={`border w-[300px] p-2 rounded ${
+                  eventStartDate ? "border-red-600" : "border-gray-border"
+                }`}
               />
             </div>
             <div className="flex gap-15 justify-between">
@@ -327,7 +363,9 @@ const EventModal: React.FC = () => {
                     }));
                   }}
                   required
-                  className="border border-gray-border p-2 rounded"
+                  className={`border p-2 rounded ${
+                    eventStartTime ? "border-red-600" : "border-gray-border"
+                  }`}
                 />
                 <span className="p-3">to</span>
                 <input
@@ -337,7 +375,9 @@ const EventModal: React.FC = () => {
                   value={formData.event_end_time ?? ""}
                   onChange={handleInputChange}
                   required
-                  className="border border-gray-border p-2 rounded"
+                  className={`border p-2 rounded ${
+                    eventEndTime ? "border-red-600" : "border-gray-border"
+                  }`}
                 />
               </div>
             </div>
@@ -477,7 +517,7 @@ const EventModal: React.FC = () => {
                     type="file"
                     ref={fileInputRef}
                     onChange={handleFileChange}
-                    className="hidden"                    
+                    className="hidden"
                   />
                   {imagePreview && (
                     <div className="image-preview p-5">
@@ -596,29 +636,31 @@ const EventModal: React.FC = () => {
             ))}
           </div>
           <div className="flex w-full justify-between mt-4">
-            {isDraft === "draft" ?
-            (<>
-            <button
-              name="updateandpublish"
-              className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary"
-              onClick={handleSubmit}
-            >
-              Update and Publish
-            </button>
-            <button
-              name="updateindraft"
-              className="p-2 px-4 rounded-md bg-primary text-white text-sm"
-              onClick={handleSubmit}
-            >
-              Update in Drafts
-            </button> </>) :
+            {isDraft === "draft" ? (
+              <>
+                <button
+                  name="updateandpublish"
+                  className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary"
+                  onClick={handleSubmit}
+                >
+                  Update and Publish
+                </button>
+                <button
+                  name="updateindraft"
+                  className="p-2 px-4 rounded-md bg-primary text-white text-sm"
+                  onClick={handleSubmit}
+                >
+                  Update in Drafts
+                </button>{" "}
+              </>
+            ) : (
               <button
                 className="p-2 px-4 rounded-md bg-primary text-white text-sm m-auto w-2/4"
                 onClick={backSubmit}
               >
                 Back
               </button>
-            }
+            )}
           </div>
         </div>
       </div>
