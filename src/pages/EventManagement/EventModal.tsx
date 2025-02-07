@@ -47,6 +47,7 @@ const EventModal: React.FC = () => {
     event_view_member_list: false,
     event_category_slugs: [],
     post_id: null,
+    event_featured: false,
   };
 
   const event = useSelector((state: { event: EventState }) =>
@@ -589,6 +590,19 @@ const EventModal: React.FC = () => {
           </div>
         </div>
         <div>
+          <div className="flex justify-center items-center w-80 p-2 rounded-l">
+            <input
+              type="checkbox"
+              checked={formData.event_featured}
+              onChange={(e) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  event_featured: e.target.checked === true,
+                }));
+              }}
+            />
+            <span className="p-3">Feature Event</span>
+          </div>
           <div className="flex flex-col items-center w-80 p-2 bg-primary-light rounded-lg">
             <h5 className="font-semibold text-lg mb-4">Meeting Tags</h5>
             {meetingTags.map((tag, index) => (
