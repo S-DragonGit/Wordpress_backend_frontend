@@ -15,19 +15,22 @@ import {
 } from "../../app/redux/notificationSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { NotificationState } from "../../app/redux/notificationSlice";
+import toast from "react-hot-toast";
 
 const NotificationModal = () => {
   const { id } = useParams();
   const token = useSelector(selectCurrentToken);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
+
   // Correct ✅
   const notification = useSelector(
     (state: { notification: NotificationState }) =>
       selectNotificationById(state, id as string)
   );
-  
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationDesc, setNotificationDesc] = useState("");
+
   const defaultFormData: NotificationFormData = {
     user_id: 0,
     // notification_id: null,
@@ -52,21 +55,25 @@ const NotificationModal = () => {
     notification_create_at: null,
     post_id: null,
   };
-  
+
   const [formData, setFormData] = useState<NotificationFormData>(
     notification ?? defaultFormData
   );
-  
+
   const [scheduleDateTime, setScheduleDateTime] = useState<string>("");
   const [geoExpirationDate, setGeoExpirationDate] = useState<string>("");
-  const [imagePreview, setImagePreview] = useState<string | null>(formData.notification_image === "" ? "" : formData.notification_image);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    formData.notification_image === "" ? "" : formData.notification_image
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [fileName, setFileName] = useState("No file chosen");
-  const [typeNotification, setTypeNotification] = useState(Number(formData.notification_how_to_send));
+  const [typeNotification, setTypeNotification] = useState(
+    Number(formData.notification_how_to_send)
+  );
 
   const isLoading = useSelector(selectNotificationLoading);
   const error = useSelector(selectNotificationError);
-  
+
   useEffect(() => {
     const now = new Date();
     // Format: YYYY-MM-DDThh:mm
@@ -75,7 +82,7 @@ const NotificationModal = () => {
     const formattedDate = now.toISOString().slice(0, 10);
     setGeoExpirationDate(formattedDate);
   }, []);
-  
+
   useEffect(() => {
     if (notification) {
       dispatch(setSelectedNotification(notification));
@@ -119,7 +126,6 @@ const NotificationModal = () => {
       </div>
     );
   }
-
 
   // Initial state
 
@@ -242,7 +248,7 @@ const NotificationModal = () => {
     const validationResult = validateImageFile(file);
 
     if (!validationResult.isValid) {
-      alert(validationResult.error);
+      toast(validationResult.error ?? "No alert");
       event.target.value = "";
       setImagePreview(null);
       return;
@@ -273,10 +279,12 @@ const NotificationModal = () => {
         ...prev,
         notification_image: base64String,
       }));
-      setFileName(file.name === "No file chosen" ? formData.notification_image : file.name);
+      setFileName(
+        file.name === "No file chosen" ? formData.notification_image : file.name
+      );
     } catch (error) {
       console.error("Error processing file:", error);
-      alert("Error processing file. Please try again.");
+      toast("Error processing file. Please try again.");
       event.target.value = "";
       setImagePreview(null);
     }
@@ -399,9 +407,21 @@ const NotificationModal = () => {
     }
 
     try {
-      await updateNotificationMutation.mutate(updatedData);
-      console.log(formData);
-      console.log(updatedData);
+      if (
+        formData.notification_title === "" ||
+        formData.notification_description === ""
+      ) {
+        if (formData.notification_title === "")
+          setNotificationTitle("Required!");
+        if (formData.notification_description === "")
+          setNotificationDesc("Required!");
+        toast("Required fields should be input! Please type.");
+        console.log(formData);
+      } else {
+        await updateNotificationMutation.mutate(updatedData);
+        console.log(formData);
+        console.log(updatedData);
+      }
     } catch (error) {
       console.error("Submission error:", error);
     }
@@ -494,7 +514,9 @@ const NotificationModal = () => {
             value={formData.notification_title}
             onChange={handleInputChange}
             required
-            className="border border-gray-border p-2 rounded"
+            className={`border w-[300px] p-2 rounded ${
+              notificationTitle ? "border-red-600" : "border-gray-border"
+            }`}
           />
         </div>
 
@@ -506,7 +528,9 @@ const NotificationModal = () => {
             name="notification_description"
             value={formData.notification_description}
             onChange={handleInputChange}
-            className="border border-gray-border p-2 rounded h-32"
+            className={`border w-[300px] p-2 rounded ${
+              notificationDesc ? "border-red-600" : "border-gray-border"
+            }`}
           />
         </div>
 

@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { NotificationFormData } from "../../types/types";
 import { NotificationStatus } from "../../types/types";
 import { GeoCategory } from "../../types/types";
+import toast from "react-hot-toast";
 
 const CreateNotification = () => {
   const id = useSelector(selectCurrentId);
@@ -42,6 +43,9 @@ const CreateNotification = () => {
 
   const [scheduleDateTime, setScheduleDateTime] = useState<string>("");
   const [geoExpirationDate, setGeoExpirationDate] = useState<string>("");
+
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationDesc, setNotificationDesc] = useState("");
 
   // Handle input changes for different field types
   const handleInputChange = (
@@ -166,7 +170,7 @@ const CreateNotification = () => {
     const validationResult = validateImageFile(file);
 
     if (!validationResult.isValid) {
-      alert(validationResult.error);
+      toast(validationResult.error ?? "No alert");
       event.target.value = "";
       setImagePreview(null);
       return;
@@ -241,7 +245,7 @@ const CreateNotification = () => {
 
     // Validate if selected date is not before today
     if (selectedDate < today) {
-      alert("Please select a date from today onwards");
+      toast("Please select a date from today onwards");
       return;
     }
 
@@ -337,7 +341,19 @@ const CreateNotification = () => {
     }
 
     try {
-      await createNotificationMutation.mutate(updatedData);
+      if (
+        formData.notification_title === "" ||
+        formData.notification_description === ""
+      ) {
+        if (formData.notification_title === "")
+          setNotificationTitle("Required!");
+        if (formData.notification_description === "")
+          setNotificationDesc("Required!");
+        toast("Required fields should be input! Please type.");
+        console.log(formData);
+      } else {
+        await createNotificationMutation.mutate(updatedData);
+      }
     } catch (error) {
       console.error("Submission error:", error);
     }
@@ -432,7 +448,9 @@ const CreateNotification = () => {
             value={formData.notification_title}
             onChange={handleInputChange}
             required
-            className="border border-gray-border p-2 rounded"
+            className={`border w-[300px] p-2 rounded ${
+              notificationTitle ? "border-red-600" : "border-gray-border"
+            }`}
           />
         </div>
 
@@ -444,7 +462,9 @@ const CreateNotification = () => {
             name="notification_description"
             value={formData.notification_description}
             onChange={handleInputChange}
-            className="border border-gray-border p-2 rounded h-32"
+            className={`border w-[300px] p-2 rounded ${
+              notificationDesc ? "border-red-600" : "border-gray-border"
+            }`}
           />
         </div>
 

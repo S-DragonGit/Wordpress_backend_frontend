@@ -63,4 +63,5 @@ export interface EventFormData {
   event_view_member_list: boolean;
   event_category_slugs: string[];
   post_id: number | null;
+  event_featured : boolean
 }

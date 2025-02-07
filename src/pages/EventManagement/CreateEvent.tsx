@@ -9,6 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 import { createEventApi } from "../../services/events";
 import { useNavigate } from "react-router-dom";
 import { EventFormData } from "../../types/types";
+import toast from "react-hot-toast";
 
 const CreateEvent: React.FC = () => {
   const id = useSelector(selectCurrentId);
@@ -40,10 +41,17 @@ const CreateEvent: React.FC = () => {
     event_view_member_list: false,
     event_category_slugs: [],
     post_id: null,
+    event_featured: false
   });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [fileName, setFileName] = useState("No file chosen");
+  const [eventTitle, setEventTitle] = useState("");
+  const [eventDesc, setEventDesc] = useState("");
+  const [eventStartDate, setEventStartDate] = useState("");
+  const [eventStartTime, setEventStartTime] = useState("");
+  // const [eventEndDate, setEventEndDate] = useState('');
+  const [eventEndTime, setEventEndTime] = useState("");
 
   const handleFileButtonClick = () => {
     if (fileInputRef.current) {
@@ -140,7 +148,7 @@ const CreateEvent: React.FC = () => {
     const validationResult = validateImageFile(file);
 
     if (!validationResult.isValid) {
-      alert(validationResult.error);
+      toast(validationResult.error ?? "An error occurred");
       event.target.value = "";
       setImagePreview(null);
       return;
@@ -195,12 +203,29 @@ const CreateEvent: React.FC = () => {
 
   const handleSubmit = async (status: "publish" | "draft") => {
     try {
-      // Update the formData with the new status directly in the mutation
-      await createEventMutation.mutateAsync({
-        ...formData,
-        event_status: status
-      });
-      navigate("/eventManagement");
+      if (
+        formData.event_title === "" ||
+        formData.event_start_date === "" ||
+        formData.event_start_time === "" ||
+        formData.event_description === "" ||
+        formData.event_end_time === ""
+      ) {
+        if (formData.event_title === "") setEventTitle("Required!");
+        if (formData.event_start_date === "") setEventStartDate("Required!");
+        if (formData.event_start_time === "") setEventStartTime("Required!");
+        // if(!formData.event_end_date) setEventEndDate("Required!")
+        if (formData.event_end_date === "") setEventEndTime("Required!");
+        if (formData.event_description === "") setEventDesc("Required!");
+        toast("Required fields should be input! Please type.");
+        console.log(formData);
+      } else {
+        // Update the formData with the new status directly in the mutation
+        await createEventMutation.mutateAsync({
+          ...formData,
+          event_status: status,
+        });
+        navigate("/eventManagement");
+      }
     } catch (error) {
       console.error("Submission error:", error);
     }
@@ -223,7 +248,9 @@ const CreateEvent: React.FC = () => {
                 value={formData.event_title}
                 onChange={handleInputChange}
                 required
-                className="border w-[300px] border-gray-border p-2 rounded"
+                className={`border w-[300px] p-2 rounded ${
+                  eventTitle ? "border-red-600" : "border-gray-border"
+                }`}
               />
             </div>
             <div className="flex gap-15 justify-between">
@@ -236,7 +263,9 @@ const CreateEvent: React.FC = () => {
                 value={formData.event_description}
                 onChange={handleInputChange}
                 required
-                className="border w-[300px] border-gray-border p-2 rounded"
+                className={`border w-[300px] p-2 rounded ${
+                  eventDesc ? "border-red-600" : "border-gray-border"
+                }`}
               />
             </div>
             <div className="flex gap-15 justify-between">
@@ -250,7 +279,9 @@ const CreateEvent: React.FC = () => {
                 value={formData.event_start_date ?? ""}
                 onChange={handleInputChange}
                 required
-                className="border w-[300px] border-gray-border p-2 rounded"
+                className={`border w-[300px] p-2 rounded ${
+                  eventStartDate ? "border-red-600" : "border-gray-border"
+                }`}
               />
             </div>
             <div className="flex gap-15 justify-between">
@@ -271,7 +302,9 @@ const CreateEvent: React.FC = () => {
                     }));
                   }}
                   required
-                  className="border border-gray-border p-2 rounded"
+                  className={`border p-2 rounded ${
+                    eventStartTime ? "border-red-600" : "border-gray-border"
+                  }`}
                 />
                 <span className="p-3">to</span>
                 <input
@@ -281,7 +314,9 @@ const CreateEvent: React.FC = () => {
                   value={formData.event_end_time ?? ""}
                   onChange={handleInputChange}
                   required
-                  className="border border-gray-border p-2 rounded"
+                  className={`border p-2 rounded ${
+                    eventEndTime ? "border-red-600" : "border-gray-border"
+                  }`}
                 />
               </div>
             </div>
@@ -493,6 +528,19 @@ const CreateEvent: React.FC = () => {
           </div>
         </div>
         <div>
+          <div className="flex justify-center items-center w-80 p-2 rounded-l">
+            <input
+              type="checkbox"
+              checked={formData.event_featured}
+              onChange={(e) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  event_featured: e.target.checked === true,
+                }));
+              }}
+            />
+            <span className="p-3">Feature Event</span>
+          </div>
           <div className="flex flex-col items-center w-80 p-2 bg-primary-light rounded-lg">
             <h5 className="font-semibold text-lg mb-4">Meeting Tags</h5>
             {meetingTags.map((tag, index) => (
