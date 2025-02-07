@@ -54,6 +54,10 @@ const EventModal: React.FC = () => {
     selectCurrentEvent(state)
   );
 
+  useEffect(() => {
+    setFormData(event ?? defaultFormData)
+  }, [event])
+
   const [isDraft, setIsDraft] = useState<string | undefined>("");
   const [eventTitle, setEventTitle] = useState("");
   const [eventStartDate, setEventStartDate] = useState("");
