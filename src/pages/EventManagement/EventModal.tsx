@@ -55,8 +55,9 @@ const EventModal: React.FC = () => {
   );
 
   useEffect(() => {
-    setFormData(event ?? defaultFormData)
-  }, [event])
+    console.log("hello");
+    setFormData(event ?? defaultFormData);
+  }, [event]);
 
   const [isDraft, setIsDraft] = useState<string | undefined>("");
   const [eventTitle, setEventTitle] = useState("");
@@ -124,13 +125,57 @@ const EventModal: React.FC = () => {
     }));
   };
 
+  // Function to parse PHP serialized string to array
+  const phpUnserialize = (serializedString: string): string[] => {
+    try {
+      // Basic parsing for this specific format
+      // Remove the "a:2:{" from start and "}" from end
+      const content = serializedString
+        .replace(/^a:\d+:{/, "") // Remove prefix
+        .replace(/}$/, ""); // Remove suffix
+
+      // Split into pairs and extract only the string values
+      const pairs = content.split(";");
+      const result: string[] = [];
+
+      for (let i = 0; i < pairs.length - 1; i += 2) {
+        // Skip the index part (i:0) and get only the string value
+        const value = pairs[i + 1]
+          .replace(/^s:\d+:"/, "") // Remove string prefix
+          .replace(/"$/, ""); // Remove trailing quote
+
+        if (value) {
+          result.push(value);
+        }
+      }
+      console.log(result)
+
+      return result;
+    } catch (error) {
+      console.error("Error parsing PHP serialized string:", error);
+      return [];
+    }
+  };
+  
+
+  // Modify your handleCategoryChange function
   const handleCategoryChange = (category: string, checked: boolean) => {
-    setFormData((prev) => ({
-      ...prev,
-      event_category_slugs: checked
-        ? [...prev.event_category_slugs, category]
-        : prev.event_category_slugs.filter((c) => c !== category),
-    }));
+    setFormData((prev) => {
+      // Convert the serialized string to array if it's a string
+      const currentSlugs =
+        typeof prev.event_category_slugs === "string"
+          ? phpUnserialize(prev.event_category_slugs)
+          : Array.isArray(prev.event_category_slugs)
+          ? prev.event_category_slugs
+          : [];
+
+      return {
+        ...prev,
+        event_category_slugs: checked
+          ? [...currentSlugs, category]
+          : currentSlugs.filter((c) => c !== category),
+      };
+    });
   };
 
   interface FileValidationResult {
