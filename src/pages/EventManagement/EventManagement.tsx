@@ -78,7 +78,7 @@ const EventManagement = () => {
       },
     });
   const handleOnViewDetails = async (event: any) => {
-    let id_data: any = {
+    const id_data: any = {
       user_id: id,
       post_id: String(Number(event.ID) + 1),
     }
