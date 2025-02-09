@@ -83,44 +83,7 @@ const CreateEvent: React.FC = () => {
     }
   }, [value]);
 
-  const [questions, setQuestions] = useState<Question[]>([
-    {
-      id: 1,
-      text: "Did you meet your project deadlines this week?",
-      type: "yesno",
-      answer: "",
-    },
-    {
-      id: 2,
-      text: "Have you completed all assigned tasks?",
-      type: "yesno",
-      answer: "",
-    },
-    {
-      id: 3,
-      text: "Are you satisfied with your work-life balance?",
-      type: "yesno",
-      answer: "",
-    },
-    {
-      id: 4,
-      text: "What were your main achievements this week?",
-      type: "review",
-      answer: "",
-    },
-    {
-      id: 5,
-      text: "What challenges did you face and how did you overcome them?",
-      type: "review",
-      answer: "",
-    },
-    {
-      id: 6,
-      text: "What areas do you think need improvement?",
-      type: "review",
-      answer: "",
-    },
-  ]);
+  const [questions, setQuestions] = useState<Question[]>([]);
 
   const [newQuestion, setNewQuestion] = useState({
     text: "",
@@ -192,7 +155,7 @@ const CreateEvent: React.FC = () => {
     event_questions: [],
     event_start_time: "",
     event_end_time: "",
-    event_is_virtual: true,
+    event_is_virtual: false,
     event_meeting_link: "",
     event_organizer: "",
     event_location: "",
@@ -639,8 +602,12 @@ const CreateEvent: React.FC = () => {
                   id="event_location"
                   name="event_location"
                   value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  onFocus={() => setShowSuggestions(true)}
+                  onChange={(e) => {
+                    setValue(e.target.value);
+                  }}
+                  onFocus={() => {
+                    setShowSuggestions(true);
+                  }}
                   onBlur={() =>
                     setTimeout(() => setShowSuggestions(false), 200)
                   }
@@ -678,6 +645,10 @@ const CreateEvent: React.FC = () => {
                         onClick={() => {
                           setValue(address);
                           setShowSuggestions(false);
+                          setFormData((prev) => ({
+                            ...prev,
+                            event_location: address,
+                          }));
                         }}
                         style={{
                           padding: "8px",
@@ -950,7 +921,7 @@ const CreateEvent: React.FC = () => {
       </div>
 
       <div className="flex justify-center">
-        <div className="col-span-4 bg-gray-50 m-auto">
+        <div className="col-span-4 bg-gray-50 m-auto w-full">
           <div className="text-center mb-8">
             <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900">
               Survey Questions

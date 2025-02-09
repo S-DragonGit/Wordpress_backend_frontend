@@ -55,12 +55,12 @@ export const eventPublishedColumns = [
         Cell: (row: { Members: any[]; }) => row?.Members?.join(", "),
     },
     {
-        header: "Action",
-        accessor: "View Details",
+        header: "",
+        accessor: "Survey Results",
     },
     {
-        header: "View Reviews",
-        accessor: "View Reviews",
+        header: "",
+        accessor: "View Full Details",
     },
 ];
 
@@ -92,12 +92,12 @@ export const eventDraftedColumns = [
         Cell: (row: any) => row?.Members?.join(", "), // Custom rendering logic for member list
     },
     {
-        header: "Actions",
+        header: "",
         accessor: "Publish",
     },
     {
-        header: "Action",
-        accessor: "View Details",
+        header: "",
+        accessor: "View Full Details",
     },
 ];
 export const navigatiorColumn = [

@@ -40,7 +40,6 @@ export interface Question {
   id: number;
   text: string;
   type: 'yesno' | 'review';
-  answer: string;
 }
 export interface Categories {
   category: string;
