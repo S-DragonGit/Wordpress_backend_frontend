@@ -8,9 +8,10 @@ import { useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { updateEventApi } from "../../services/events";
 import { useNavigate } from "react-router-dom";
-import { EventFormData, EventStatus } from "../../types/types";
+import { EventFormData, Question, EventStatus } from "../../types/types";
 import { EventState, selectCurrentEvent } from "../../app/redux/eventSlice";
 import toast from "react-hot-toast";
+import { Pencil, Trash2, Plus, X, Check } from 'lucide-react';
 // import { getEventById } from "../../services/events"
 // import { useDispatch } from "react-redux";
 
@@ -24,6 +25,7 @@ const EventModal: React.FC = () => {
     event_title: "",
     event_description: "",
     event_start_date: "",
+    event_questions: [],
     event_start_time: "",
     event_end_date: "",
     event_end_time: "",
@@ -50,6 +52,7 @@ const EventModal: React.FC = () => {
     event_featured: false,
   };
 
+
   const event = useSelector((state: { event: EventState }) =>
     selectCurrentEvent(state)
   );
@@ -70,16 +73,65 @@ const EventModal: React.FC = () => {
   const [formData, setFormData] = useState<EventFormData>(
     event ?? defaultFormData
   );
-  // console.log(formData);
-  // useEffect(() => {
-  //     if (event) {
-  //       dispatch(setCurrentEvent(event));
-  //     }
-  //   }, [event, dispatch]);
 
-  // useEffect(()=>{
-  //   console.log('hello: ', event)
-  // }, [event])
+  const [questions, setQuestions] = useState<Question[]>(formData.event_questions);
+  
+    const [newQuestion, setNewQuestion] = useState({
+      text: '',
+      type: 'yesno' as 'yesno' | 'review'
+    });
+  
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editText, setEditText] = useState('');
+  
+    const sortQuestions = (questions: Question[]): Question[] => {
+      return [...questions].sort((a, b) => {
+        // First sort by type (yesno comes first)
+        if (a.type !== b.type) {
+          return a.type === 'yesno' ? -1 : 1;
+        }
+        // Then sort by ID within each type
+        return a.id - b.id;
+      }).map((q, index) => ({ ...q, id: index + 1 }));
+    };
+  
+    const handleAddQuestion = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (newQuestion.text.trim()) {
+        const newQuestions = [...questions, {
+          id: questions.length + 1,
+          text: newQuestion.text,
+          type: newQuestion.type,
+          answer: ''
+        }];
+        setQuestions(sortQuestions(newQuestions));
+        setNewQuestion({ text: '', type: 'yesno' });
+      }
+    };
+  
+    const handleDeleteQuestion = (id: number) => {
+      const filteredQuestions = questions.filter(q => q.id !== id);
+      setQuestions(sortQuestions(filteredQuestions));
+    };
+  
+    const startEditing = (question: Question) => {
+      setEditingId(question.id);
+      setEditText(question.text);
+    };
+  
+    const saveEdit = (id: number) => {
+      if (editText.trim()) {
+        const updatedQuestions = questions.map(q =>
+          q.id === id ? { ...q, text: editText } : q
+        );
+        setQuestions(sortQuestions(updatedQuestions));
+        setEditingId(null);
+      }
+    };
+  
+    // Group questions by type
+    const yesNoQuestions = questions.filter(q => q.type === 'yesno');
+    const reviewQuestions = questions.filter(q => q.type === 'review');
 
   useEffect(() => {
     setIsDraft(event?.event_status);
@@ -344,9 +396,9 @@ const EventModal: React.FC = () => {
 
   return (
     <>
-      <h2 className="pl-[30px] pt-[30px] font-bold">Event View Details</h2>
-      <div className="flex 2xl:flex-row flex-col justify-between items-center w-full gap-2">
-        <div className="smd:grid gap-25 gap-sm-5 grid-cols-2 mt-10 smd:ml-10">
+      <h2 className="pl-[30px] pt-[30px] font-bold">Create New Event</h2>
+      <div className="flex 2xl:flex-row flex-col justify-between items-center w-full m-auto gap-2">
+        <div className="smd:grid gap-20 gap-sm-5 grid-cols-2 mt-10 px-6 w-full">
           <div className="flex flex-col gap-5">
             <div className="flex gap-4 justify-between">
               <label className="text-sm mt-2">
@@ -509,7 +561,7 @@ const EventModal: React.FC = () => {
                 type="text"
                 id="event_members"
                 name="event_members"
-                // value={formData.event_members.join(",")}
+                value={formData.event_members.join(",")}
                 onChange={(e) => {
                   // Convert back to number array when handling changes
                   const numbers = e.target.value
@@ -524,7 +576,7 @@ const EventModal: React.FC = () => {
                 className="border w-[300px] border-gray-border p-2 rounded"
               />
             </div>
-            <div className="flex gap-15 justify-start">
+            <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
                 <span className="text-red-500"></span>Member permmisions
               </label>
@@ -581,65 +633,254 @@ const EventModal: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div>          
+        </div>
+      </div>
+      <div className="mt-4">
+          <RecurringComponent
+            isRecurring={formData.event_recurring}
+            setIsRecurring={handleRecurringChange}
+            repeatEvery={formData.event_repeat_every}
+            setRepeatEvery={(value) =>
+              setFormData((prev) => ({ ...prev, event_repeat_every: value }))
+            }
+            selectedDays={formData.event_repeat_on.split(",")}
+            toggleDay={handleRepeatOnChange}
+            time={formData.event_time ?? ""}
+            setTime={(value) =>
+              setFormData((prev) => ({ ...prev, event_time: value }))
+            }
+            endOption={
+              formData.event_never
+                ? "never"
+                : formData.event_on
+                ? "on"
+                : "after"
+            }
+            setEndOption={(option) => {
+              if (option === "never")
+                setFormData((prev) => ({
+                  ...prev,
+                  event_never: true,
+                  event_on: "",
+                  event_after: 4,
+                }));
+              else if (option === "on")
+                setFormData((prev) => ({
+                  ...prev,
+                  event_never: false,
+                  event_on: new Date().toISOString().split("T")[0],
+                  event_after: 4,
+                }));
+              else
+                setFormData((prev) => ({
+                  ...prev,
+                  event_never: false,
+                  event_on: "",
+                  event_after: 4,
+                }));
+            }}
+            endDate={formData.event_on}
+            setEndDate={(value) =>
+              setFormData((prev) => ({ ...prev, event_on: value }))
+            }
+            occurrences={formData.event_after}
+            setOccurrences={(value) =>
+              setFormData((prev) => ({ ...prev, event_after: value }))
+            }
+          />
+      </div>
 
-          <div className="col-span-2">
-            <RecurringComponent
-              isRecurring={formData.event_recurring}
-              setIsRecurring={handleRecurringChange}
-              repeatEvery={formData.event_repeat_every}
-              setRepeatEvery={(value) =>
-                setFormData((prev) => ({ ...prev, event_repeat_every: value }))
-              }
-              selectedDays={formData.event_repeat_on.split(",")}
-              toggleDay={handleRepeatOnChange}
-              time={formData.event_time ?? ""}
-              setTime={(value) =>
-                setFormData((prev) => ({ ...prev, event_time: value }))
-              }
-              endOption={
-                formData.event_never
-                  ? "never"
-                  : formData.event_on
-                  ? "on"
-                  : "after"
-              }
-              setEndOption={(option) => {
-                if (option === "never")
-                  setFormData((prev) => ({
-                    ...prev,
-                    event_never: true,
-                    event_on: "",
-                    event_after: 4,
-                  }));
-                else if (option === "on")
-                  setFormData((prev) => ({
-                    ...prev,
-                    event_never: false,
-                    event_on: new Date().toISOString().split("T")[0],
-                    event_after: 4,
-                  }));
-                else
-                  setFormData((prev) => ({
-                    ...prev,
-                    event_never: false,
-                    event_on: "",
-                    event_after: 4,
-                  }));
-              }}
-              endDate={formData.event_on}
-              setEndDate={(value) =>
-                setFormData((prev) => ({ ...prev, event_on: value }))
-              }
-              occurrences={formData.event_after}
-              setOccurrences={(value) =>
-                setFormData((prev) => ({ ...prev, event_after: value }))
-              }
-            />
+      <div className="grid grid-cols-6 gap-2">
+        <div className="col-span-4 bg-gray-50 m-auto">
+          <div className="text-center mb-8">
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900">
+              Weekly Review Questions
+            </h1>
+            <p className="mt-2 text-lg text-gray-600">
+              Question Management System
+            </p>
+          </div>
+          {/* Add New Question Form */}
+          <div className="shadow rounded-lg p-6 mb-8 bg-primary-light">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Add New Question
+            </h2>
+            <form onSubmit={handleAddQuestion} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Question Text
+                </label>
+                <input
+                  type="text"
+                  value={newQuestion.text}
+                  onChange={(e) => setNewQuestion({ ...newQuestion, text: e.target.value })}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Enter your question..."
+                />
+              </div>
+              <div className="flex gap-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    checked={newQuestion.type === 'yesno'}
+                    onChange={() => setNewQuestion({ ...newQuestion, type: 'yesno' })}
+                    className="mr-2"
+                  />
+                  Yes/No Question
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    checked={newQuestion.type === 'review'}
+                    onChange={() => setNewQuestion({ ...newQuestion, type: 'review' })}
+                    className="mr-2"
+                  />
+                  Review Question
+                </label>
+              </div>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-md hover:bg-primary hover:text-white focus:outline-none border duration-300 ease-in-out"
+              >
+                Add Question
+              </button>
+            </form>
+          </div>
+  
+          <div className="flex p-6 gap-8 xl:flex-row flex-col justify-between">
+            {/* Yes/No Questions Section */}
+            {yesNoQuestions.length > 0 && (
+              <div className="w-full xl:w-1/2">
+                <h2 className="text-xl font-semibold mb-4 text-blue-800">Yes/No Questions</h2>
+                <div className="space-y-4">
+                  {yesNoQuestions.map((question, index) => (
+                    <div key={question.id} className="bg-primary-light shadow rounded-lg p-6 border-l-4 border-blue-500">
+                      <div className="flex justify-between items-start">
+                        {editingId === question.id ? (
+                          <div className="flex-1 mr-4">
+                            <input
+                              type="text"
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                onClick={() => saveEdit(question.id)}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <Check className="h-5 w-5" />
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <X className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex-1">
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {index + 1}. {question.text}
+                            </h3>
+                            <span className="inline-block mt-2 px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800">
+                              Yes/No Question
+                            </span>
+                          </div>
+                        )}
+                        {editingId !== question.id && (
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => startEditing(question)}
+                              className="text-gray-600 hover:text-gray-700"
+                            >
+                              <Pencil className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteQuestion(question.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Review Questions Section */}
+            {reviewQuestions.length > 0 && (
+              <div className="w-full xl:w-1/2">
+                <h2 className="text-xl font-semibold mb-4 text-purple-800">Review Questions</h2>
+                <div className="space-y-4">
+                  {reviewQuestions.map((question, index) => (
+                    <div key={question.id} className="bg-primary-light shadow rounded-lg p-6 border-l-4 border-purple-500">
+                      <div className="flex justify-between items-start">
+                        {editingId === question.id ? (
+                          <div className="flex-1 mr-4">
+                            <input
+                              type="text"
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                onClick={() => saveEdit(question.id)}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <Check className="h-5 w-5" />
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <X className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex-1">
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {index + 1}. {question.text}
+                            </h3>
+                            <span className="inline-block mt-2 px-3 py-1 text-sm font-medium rounded-full bg-purple-100 text-purple-800">
+                              Review Question
+                            </span>
+                          </div>
+                        )}
+                        {editingId !== question.id && (
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => startEditing(question)}
+                              className="text-gray-600 hover:text-gray-700"
+                            >
+                              <Pencil className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteQuestion(question.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
-        <div>
-          <div className="flex justify-center items-center w-80 p-2 rounded-l">
+        <div className="col-span-2">
+          <div className="w-full flex justify-center items-center p-2 mt-12 rounded-l">
             <input
               type="checkbox"
               checked={formData.event_featured}
@@ -652,80 +893,77 @@ const EventModal: React.FC = () => {
             />
             <span className="p-3">Feature Event</span>
           </div>
-          <div className="flex flex-col items-center w-80 p-2 bg-primary-light rounded-lg">
+          <div className="w-5/6 flex flex-col items-center p-2 bg-primary-light rounded-lg m-auto">
             <h5 className="font-semibold text-lg mb-4">Meeting Tags</h5>
-            {meetingTags.map((tag, index) => (
-              <div
-                key={index}
-                className="w-full flex flex-col items-center mb-4"
-              >
-                <label className="flex items-center gap-2 mb-2">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4"
-                    checked={formData.event_category_slugs.includes(
-                      tag.category
-                    )}
-                    onChange={(e) =>
-                      handleCategoryChange(tag.category, e.target.checked)
-                    }
-                  />
-                  <span className="text-sm">{tag.category}</span>
-                </label>
-                <div className="bg-primary-light3 p-4 rounded-md w-full flex flex-col items-center border border-gray-border">
-                  <div
-                    className={
-                      index === 0
-                        ? "grid grid-cols-2 gap-2"
-                        : "flex flex-col gap-2 w-full"
-                    }
-                  >
-                    {tag.items.map((item, idx) => (
-                      <label key={idx} className="flex items-center gap-1">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4"
-                          checked={formData.event_category_slugs.includes(item)}
-                          onChange={(e) =>
-                            handleCategoryChange(item, e.target.checked)
-                          }
-                        />
-                        <span className="text-sm">{item}</span>
-                      </label>
-                    ))}
+            <div className="w-full">
+              {meetingTags.map((tag, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col items-center mb-4 mx-2"
+                >
+                  <label className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4"
+                      checked={formData.event_category_slugs.includes(
+                        tag.category
+                      )}
+                      onChange={(e) =>
+                        handleCategoryChange(tag.category, e.target.checked)
+                      }
+                    />
+                    <span className="text-sm">{tag.category}</span>
+                  </label>
+                  <div className="bg-primary-light3 p-4 rounded-md w-full flex flex-col items-center border border-gray-border">
+                    <div
+                      className={
+                        index === 0
+                          ? "grid grid-cols-2 gap-2"
+                          : "flex flex-col gap-2 w-full"
+                      }
+                    >
+                      {tag.items.map((item, idx) => (
+                        <label key={idx} className="flex items-center gap-1">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4"
+                            checked={formData.event_category_slugs.includes(item)}
+                            onChange={(e) =>
+                              handleCategoryChange(item, e.target.checked)
+                            }
+                          />
+                          <span className="text-sm">{item}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-          <div className="flex w-full justify-between mt-4">
-            {isDraft === "draft" ? (
-              <>
-                <button
-                  name="updateandpublish"
-                  className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary"
-                  onClick={handleSubmit}
-                >
-                  Update and Publish
-                </button>
-                <button
-                  name="updateindraft"
-                  className="p-2 px-4 rounded-md bg-primary text-white text-sm"
-                  onClick={handleSubmit}
-                >
-                  Update in Drafts
-                </button>{" "}
-              </>
-            ) : (
-              <button
-                className="p-2 px-4 rounded-md bg-primary text-white text-sm m-auto w-2/4"
-                onClick={backSubmit}
+              ))}
+            </div>
+            <div className="flex gap-4 justify-between mt-4 m-auto">
+              {isDraft === "draft" ?
+              <><button
+                name="updateandpublish"
+                className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary"
+                onClick={handleSubmit}
               >
-                Back
+                Create and Publish
               </button>
-            )}
+              <button
+                className="p-2 px-4 rounded-md bg-primary text-white text-sm"
+                onClick={handleSubmit}
+              >
+                Create in Drafts
+              </button></> :
+              <button
+              className="p-2 px-4 rounded-md bg-primary text-white text-sm"
+              onClick={backSubmit}
+            >
+              Back
+            </button>}
+            </div>
           </div>
-        </div>
+        </div>            
       </div>
     </>
   );

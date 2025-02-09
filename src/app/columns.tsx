@@ -58,6 +58,10 @@ export const eventPublishedColumns = [
         header: "Action",
         accessor: "View Details",
     },
+    {
+        header: "View Reviews",
+        accessor: "View Reviews",
+    },
 ];
 
 

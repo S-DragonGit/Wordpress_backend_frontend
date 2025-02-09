@@ -7,6 +7,7 @@ const CreateNotification = lazy(() => import('../pages/Notification/CreateNotifi
 const NotificationModal = lazy(() => import('../pages/Notification/NotificationModal'));
 const CreateEvent = lazy(() => import('../pages/EventManagement/CreateEvent'));
 const EventModal = lazy(() => import('../pages/EventManagement/EventModal'));
+// const EventReviews = lazy(() => import('../pages/EventManagement/EventReviews'));
 
 const coreRoutes = [
     {
@@ -49,6 +50,11 @@ const coreRoutes = [
         title: 'EventModal',
         component: EventModal,
     },
+    // {
+    //     path: '/eventManagement/reviews/:id',
+    //     title: 'EventReviews',
+    //     component: EventReviews,
+    // },
 ];
 
 const routes = [...coreRoutes];

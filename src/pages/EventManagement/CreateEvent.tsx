@@ -8,15 +8,119 @@ import { useRef } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { createEventApi } from "../../services/events";
 import { useNavigate } from "react-router-dom";
-import { EventFormData } from "../../types/types";
+import { EventFormData, Question } from "../../types/types";
 import toast from "react-hot-toast";
 
+import { Pencil, Trash2, Plus, X, Check } from "lucide-react";
+
 const CreateEvent: React.FC = () => {
+  const [questions, setQuestions] = useState<Question[]>([
+    {
+      id: 1,
+      text: "Did you meet your project deadlines this week?",
+      type: "yesno",
+      answer: "",
+    },
+    {
+      id: 2,
+      text: "Have you completed all assigned tasks?",
+      type: "yesno",
+      answer: "",
+    },
+    {
+      id: 3,
+      text: "Are you satisfied with your work-life balance?",
+      type: "yesno",
+      answer: "",
+    },
+    {
+      id: 4,
+      text: "What were your main achievements this week?",
+      type: "review",
+      answer: "",
+    },
+    {
+      id: 5,
+      text: "What challenges did you face and how did you overcome them?",
+      type: "review",
+      answer: "",
+    },
+    {
+      id: 6,
+      text: "What areas do you think need improvement?",
+      type: "review",
+      answer: "",
+    },
+  ]);
+
+  const [newQuestion, setNewQuestion] = useState({
+    text: "",
+    type: "yesno" as "yesno" | "review",
+  });
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
+
+  const sortQuestions = (questions: Question[]): Question[] => {
+    return [...questions]
+      .sort((a, b) => {
+        // First sort by type (yesno comes first)
+        if (a.type !== b.type) {
+          return a.type === "yesno" ? -1 : 1;
+        }
+        // Then sort by ID within each type
+        return a.id - b.id;
+      })
+      .map((q, index) => ({ ...q, id: index + 1 }));
+  };
+
+  const handleAddQuestion = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newQuestion.text.trim()) {
+      const newQuestions = [
+        ...questions,
+        {
+          id: questions.length + 1,
+          text: newQuestion.text,
+          type: newQuestion.type,
+          answer: "",
+        },
+      ];
+      setQuestions(sortQuestions(newQuestions));
+      setNewQuestion({ text: "", type: "yesno" });
+    }
+  };
+
+  const handleDeleteQuestion = (id: number) => {
+    const filteredQuestions = questions.filter((q) => q.id !== id);
+    setQuestions(sortQuestions(filteredQuestions));
+  };
+
+  const startEditing = (question: Question) => {
+    setEditingId(question.id);
+    setEditText(question.text);
+  };
+
+  const saveEdit = (id: number) => {
+    if (editText.trim()) {
+      const updatedQuestions = questions.map((q) =>
+        q.id === id ? { ...q, text: editText } : q
+      );
+      setQuestions(sortQuestions(updatedQuestions));
+      setEditingId(null);
+    }
+  };
+
+  // Group questions by type
+  const yesNoQuestions = questions.filter((q) => q.type === "yesno");
+  const reviewQuestions = questions.filter((q) => q.type === "review");
+
   const id = useSelector(selectCurrentId);
   const token = useSelector(selectCurrentToken);
   const [formData, setFormData] = useState<EventFormData>({
     event_title: "",
     event_description: "",
+    event_questions: [],
     event_start_date: "",
     event_start_time: "",
     event_end_date: "",
@@ -41,7 +145,8 @@ const CreateEvent: React.FC = () => {
     event_view_member_list: false,
     event_category_slugs: [],
     post_id: null,
-    event_featured: false
+    event_featured: false,
+    event_popup: false
   });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -49,9 +154,9 @@ const CreateEvent: React.FC = () => {
   const [eventTitle, setEventTitle] = useState("");
   const [eventDesc, setEventDesc] = useState("");
   const [eventStartDate, setEventStartDate] = useState("");
-  const [eventStartTime, setEventStartTime] = useState("");
-  // const [eventEndDate, setEventEndDate] = useState('');
-  const [eventEndTime, setEventEndTime] = useState("");
+  // const [eventStartTime, setEventStartTime] = useState("");
+  const [eventEndDate, setEventEndDate] = useState('');
+  // const [eventEndTime, setEventEndTime] = useState("");
 
   const handleFileButtonClick = () => {
     if (fileInputRef.current) {
@@ -212,9 +317,9 @@ const CreateEvent: React.FC = () => {
       ) {
         if (formData.event_title === "") setEventTitle("Required!");
         if (formData.event_start_date === "") setEventStartDate("Required!");
-        if (formData.event_start_time === "") setEventStartTime("Required!");
-        // if(!formData.event_end_date) setEventEndDate("Required!")
-        if (formData.event_end_date === "") setEventEndTime("Required!");
+        // if (formData.event_start_time === "") setEventStartTime("Required!");
+        if(!formData.event_end_date) setEventEndDate("Required!")
+        // if (formData.event_end_date === "") setEventEndTime("Required!");
         if (formData.event_description === "") setEventDesc("Required!");
         toast("Required fields should be input! Please type.");
         console.log(formData);
@@ -223,6 +328,7 @@ const CreateEvent: React.FC = () => {
         await createEventMutation.mutateAsync({
           ...formData,
           event_status: status,
+          event_questions: questions,
         });
         navigate("/eventManagement");
       }
@@ -234,12 +340,12 @@ const CreateEvent: React.FC = () => {
   return (
     <>
       <h2 className="pl-[30px] pt-[30px] font-bold">Create New Event</h2>
-      <div className="flex 2xl:flex-row flex-col justify-between items-center w-full gap-2">
-        <div className="smd:grid gap-25 gap-sm-5 grid-cols-2 mt-10 smd:ml-10">
+      <div className="flex 2xl:flex-row flex-col justify-between items-center w-full m-auto gap-2">
+        <div className="smd:grid gap-20 gap-sm-5 grid-cols-2 mt-10 px-6 w-xl-2/3 w-sm-full">
           <div className="flex flex-col gap-5">
             <div className="flex gap-4 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>Event Title
+                <span className="text-red-500"></span>*Event Title
               </label>
               <input
                 type="text"
@@ -270,7 +376,7 @@ const CreateEvent: React.FC = () => {
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>Event Date
+                <span className="text-red-500"></span>*Event Date
               </label>
               <input
                 type="date"
@@ -286,14 +392,14 @@ const CreateEvent: React.FC = () => {
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>Event Time
+                <span className="text-red-500"></span>*Event Time
               </label>
-              <div className="flex w-[300px] justify-between">
+              <div className="flex justify-between">
                 <input
-                  type="time"
-                  id="event_start_time"
-                  name="event_start_time"
-                  value={formData.event_start_time ?? ""}
+                  type="date"
+                  id="event_start_date"
+                  name="event_start_date"
+                  value={formData.event_start_date ?? ""}
                   onChange={(e) => {
                     const { name, value } = e.target;
                     setFormData((prev) => ({
@@ -303,20 +409,20 @@ const CreateEvent: React.FC = () => {
                   }}
                   required
                   className={`border p-2 rounded ${
-                    eventStartTime ? "border-red-600" : "border-gray-border"
-                  }`}
+                    eventStartDate ? "border-red-600" : "border-gray-border"
+                  } w-[130px]`}
                 />
                 <span className="p-3">to</span>
                 <input
-                  type="time"
-                  id="event_end_time"
-                  name="event_end_time"
-                  value={formData.event_end_time ?? ""}
+                  type="date"
+                  id="event_end_date"
+                  name="event_end_date"
+                  value={formData.event_end_date ?? ""}
                   onChange={handleInputChange}
                   required
                   className={`border p-2 rounded ${
-                    eventEndTime ? "border-red-600" : "border-gray-border"
-                  }`}
+                    eventEndDate ? "border-red-600" : "border-gray-border"
+                  } w-[130px]`}
                 />
               </div>
             </div>
@@ -362,16 +468,19 @@ const CreateEvent: React.FC = () => {
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>Meeting link
+                <span className="text-red-500"></span>Meeting Link
               </label>
               <input
                 type="text"
                 id="event_meeting_link"
                 name="event_meeting_link"
                 value={formData.event_meeting_link}
+                disabled={!formData.event_is_virtual}
                 onChange={handleInputChange}
                 required
-                className="border w-[300px] border-gray-border p-2 rounded"
+                className={`border w-[300px] border-gray-border p-2 rounded ${
+                  formData.event_is_virtual ? "" : "disabled:cursor-not-allowed"
+                }`}
               />
             </div>
             <div className="flex gap-15 justify-between">
@@ -413,7 +522,7 @@ const CreateEvent: React.FC = () => {
                 className="border w-[300px] border-gray-border p-2 rounded"
               />
             </div>
-            <div className="flex gap-15 justify-start">
+            <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
                 <span className="text-red-500"></span>Member permmisions
               </label>
@@ -471,135 +580,356 @@ const CreateEvent: React.FC = () => {
               </div>
             </div>
           </div>
-
-          <div className="col-span-2">
-            <RecurringComponent
-              isRecurring={formData.event_recurring}
-              setIsRecurring={handleRecurringChange}
-              repeatEvery={formData.event_repeat_every}
-              setRepeatEvery={(value) =>
-                setFormData((prev) => ({ ...prev, event_repeat_every: value }))
-              }
-              selectedDays={formData.event_repeat_on.split(",")}
-              toggleDay={handleRepeatOnChange}
-              time={formData.event_time ?? ""}
-              setTime={(value) =>
-                setFormData((prev) => ({ ...prev, event_time: value }))
-              }
-              endOption={
-                formData.event_never
-                  ? "never"
-                  : formData.event_on
-                  ? "on"
-                  : "after"
-              }
-              setEndOption={(option) => {
-                if (option === "never")
-                  setFormData((prev) => ({
-                    ...prev,
-                    event_never: true,
-                    event_on: "",
-                    event_after: 4,
-                  }));
-                else if (option === "on")
-                  setFormData((prev) => ({
-                    ...prev,
-                    event_never: false,
-                    event_on: new Date().toISOString().split("T")[0],
-                    event_after: 4,
-                  }));
-                else
-                  setFormData((prev) => ({
-                    ...prev,
-                    event_never: false,
-                    event_on: "",
-                    event_after: 4,
-                  }));
-              }}
-              endDate={formData.event_on}
-              setEndDate={(value) =>
-                setFormData((prev) => ({ ...prev, event_on: value }))
-              }
-              occurrences={formData.event_after}
-              setOccurrences={(value) =>
-                setFormData((prev) => ({ ...prev, event_after: value }))
-              }
-            />
-          </div>
         </div>
-        <div>
-          <div className="flex justify-center items-center w-80 p-2 rounded-l">
-            <input
-              type="checkbox"
-              checked={formData.event_featured}
-              onChange={(e) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  event_featured: e.target.checked === true,
-                }));
-              }}
-            />
-            <span className="p-3">Feature Event</span>
-          </div>
-          <div className="flex flex-col items-center w-80 p-2 bg-primary-light rounded-lg">
-            <h5 className="font-semibold text-lg mb-4">Meeting Tags</h5>
-            {meetingTags.map((tag, index) => (
-              <div
-                key={index}
-                className="w-full flex flex-col items-center mb-4"
-              >
-                <label className="flex items-center gap-2 mb-2">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4"
-                    checked={formData.event_category_slugs.includes(
-                      tag.category
-                    )}
-                    onChange={(e) =>
-                      handleCategoryChange(tag.category, e.target.checked)
-                    }
-                  />
-                  <span className="text-sm">{tag.category}</span>
-                </label>
-                <div className="bg-primary-light3 p-4 rounded-md w-full flex flex-col items-center border border-gray-border">
-                  <div
-                    className={
-                      index === 0
-                        ? "grid grid-cols-2 gap-2"
-                        : "flex flex-col gap-2 w-full"
-                    }
-                  >
-                    {tag.items.map((item, idx) => (
-                      <label key={idx} className="flex items-center gap-1">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4"
-                          checked={formData.event_category_slugs.includes(item)}
-                          onChange={(e) =>
-                            handleCategoryChange(item, e.target.checked)
-                          }
-                        />
-                        <span className="text-sm">{item}</span>
-                      </label>
-                    ))}
+        <div className="w-lg-1/3 w-sm-full">
+          <h5 className="font-semibold text-lg mb-4 text-center">Meeting Tags</h5>
+          <div className="w-5/6 flex flex-col items-center p-2 bg-primary-light rounded-lg m-auto">
+            <div className="w-full flex justify-center items-center p-2 border-b-[1px] pb-0">
+              <div className="flex w-1/2 justify-center">
+                <input
+                  type="checkbox"
+                  checked={formData.event_featured}
+                  onChange={(e) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      event_featured: e.target.checked === true,
+                    }));
+                  }}
+                />
+                <span className="p-3 font-bold text-shadow-md">Featured Event</span>
+              </div>
+              <div className="flex w-1/2 justify-center">
+                <input
+                  type="checkbox"
+                  checked={formData.event_popup}
+                  onChange={(e) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      event_popup: e.target.checked === true,
+                    }));
+                  }}
+                />
+                <span className="p-3 font-bold text-shadow-md">Pop Up Event</span>
+              </div>
+            </div>
+            <div
+              className="w-full max-h-[500px] overflow-y-auto pt-2
+    scrollbar scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100
+    hover:scrollbar-thumb-gray-500"
+            >
+              {meetingTags.map((tag, index) => (
+                <div
+                  key={index}
+                  className="flex flex-col items-center mb-4 mx-2"
+                >
+                  <label className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4"
+                      checked={formData.event_category_slugs.includes(
+                        tag.category
+                      )}
+                      onChange={(e) =>
+                        handleCategoryChange(tag.category, e.target.checked)
+                      }
+                    />
+                    <span className="text-sm">{tag.category}</span>
+                  </label>
+                  <div className="bg-primary-light3 p-4 rounded-md w-full flex flex-col items-center border border-gray-border">
+                    <div
+                      className={
+                        index === 0
+                          ? "grid grid-cols-2 gap-2"
+                          : "flex flex-col gap-2 w-full"
+                      }
+                    >
+                      {tag.items.map((item, idx) => (
+                        <label key={idx} className="flex items-center gap-1">
+                          <input
+                            type="checkbox"
+                            className="w-4 h-4"
+                            checked={formData.event_category_slugs.includes(
+                              item
+                            )}
+                            onChange={(e) =>
+                              handleCategoryChange(item, e.target.checked)
+                            }
+                          />
+                          <span className="text-sm">{item}</span>
+                        </label>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-          <div className="flex w-full justify-between mt-4">
+          <div className="flex gap-2 justify-around mt-8 m-auto px-8">
             <button
-              className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary"
+              className="px-4 py-2 rounded-md hover:bg-primary hover:text-white focus:outline-none border duration-300 ease-in-out"
               onClick={() => handleSubmit("publish")}
             >
               Create and Publish
             </button>
             <button
-              className="p-2 px-4 rounded-md bg-primary text-white text-sm"
+              className="px-4 py-2 rounded-md hover:bg-primary hover:text-white focus:outline-none border duration-300 ease-in-out"
               onClick={() => handleSubmit("draft")}
             >
               Create in Drafts
             </button>
+          </div>
+        </div>
+      </div>
+      <div className="mt-1">
+        <RecurringComponent
+          isRecurring={formData.event_recurring}
+          setIsRecurring={handleRecurringChange}
+          repeatEvery={formData.event_repeat_every}
+          setRepeatEvery={(value) =>
+            setFormData((prev) => ({ ...prev, event_repeat_every: value }))
+          }
+          selectedDays={formData.event_repeat_on.split(",")}
+          toggleDay={handleRepeatOnChange}
+          time={formData.event_time ?? ""}
+          setTime={(value) =>
+            setFormData((prev) => ({ ...prev, event_time: value }))
+          }
+          endOption={
+            formData.event_never ? "never" : formData.event_on ? "on" : "after"
+          }
+          setEndOption={(option) => {
+            if (option === "never")
+              setFormData((prev) => ({
+                ...prev,
+                event_never: true,
+                event_on: "",
+                event_after: 4,
+              }));
+            else if (option === "on")
+              setFormData((prev) => ({
+                ...prev,
+                event_never: false,
+                event_on: new Date().toISOString().split("T")[0],
+                event_after: 4,
+              }));
+            else
+              setFormData((prev) => ({
+                ...prev,
+                event_never: false,
+                event_on: "",
+                event_after: 4,
+              }));
+          }}
+          endDate={formData.event_on}
+          setEndDate={(value) =>
+            setFormData((prev) => ({ ...prev, event_on: value }))
+          }
+          occurrences={formData.event_after}
+          setOccurrences={(value) =>
+            setFormData((prev) => ({ ...prev, event_after: value }))
+          }
+        />
+      </div>
+
+      <div className="flex justify-center">
+        <div className="col-span-4 bg-gray-50 m-auto">
+          <div className="text-center mb-8">
+            <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900">
+              Survey Questions
+            </h1>
+          </div>
+          {/* Add New Question Form */}
+          <div className="shadow rounded-lg p-6 mb-8 bg-primary-light">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Add New Question
+            </h2>
+            <form onSubmit={handleAddQuestion} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Question Text
+                </label>
+                <input
+                  type="text"
+                  value={newQuestion.text}
+                  onChange={(e) =>
+                    setNewQuestion({ ...newQuestion, text: e.target.value })
+                  }
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Enter your question..."
+                />
+              </div>
+              <div className="flex gap-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    checked={newQuestion.type === "yesno"}
+                    onChange={() =>
+                      setNewQuestion({ ...newQuestion, type: "yesno" })
+                    }
+                    className="mr-2"
+                  />
+                  Yes/No Question
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    checked={newQuestion.type === "review"}
+                    onChange={() =>
+                      setNewQuestion({ ...newQuestion, type: "review" })
+                    }
+                    className="mr-2"
+                  />
+                  Review Question
+                </label>
+              </div>
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-md hover:bg-primary hover:text-white focus:outline-none border duration-300 ease-in-out"
+              >
+                Add Question
+              </button>
+            </form>
+          </div>
+
+          <div className="flex p-6 gap-8 xl:flex-row flex-col justify-between">
+            {/* Yes/No Questions Section */}
+            {yesNoQuestions.length > 0 && (
+              <div className="w-full xl:w-1/2">
+                <h2 className="text-xl font-semibold mb-4 text-blue-800">
+                  Yes/No Questions
+                </h2>
+                <div className="space-y-4">
+                  {yesNoQuestions.map((question, index) => (
+                    <div
+                      key={question.id}
+                      className="bg-primary-light shadow rounded-lg p-6 border-l-4 border-blue-500"
+                    >
+                      <div className="flex justify-between items-start">
+                        {editingId === question.id ? (
+                          <div className="flex-1 mr-4">
+                            <input
+                              type="text"
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                onClick={() => saveEdit(question.id)}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <Check className="h-5 w-5" />
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <X className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex-1">
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {index + 1}. {question.text}
+                            </h3>
+                            <span className="inline-block mt-2 px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800">
+                              Yes/No Question
+                            </span>
+                          </div>
+                        )}
+                        {editingId !== question.id && (
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => startEditing(question)}
+                              className="text-gray-600 hover:text-gray-700"
+                            >
+                              <Pencil className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteQuestion(question.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Review Questions Section */}
+            {reviewQuestions.length > 0 && (
+              <div className="w-full xl:w-1/2">
+                <h2 className="text-xl font-semibold mb-4 text-purple-800">
+                  Review Questions
+                </h2>
+                <div className="space-y-4">
+                  {reviewQuestions.map((question, index) => (
+                    <div
+                      key={question.id}
+                      className="bg-primary-light shadow rounded-lg p-6 border-l-4 border-purple-500"
+                    >
+                      <div className="flex justify-between items-start">
+                        {editingId === question.id ? (
+                          <div className="flex-1 mr-4">
+                            <input
+                              type="text"
+                              value={editText}
+                              onChange={(e) => setEditText(e.target.value)}
+                              className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                            />
+                            <div className="mt-2 flex gap-2">
+                              <button
+                                onClick={() => saveEdit(question.id)}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                <Check className="h-5 w-5" />
+                              </button>
+                              <button
+                                onClick={() => setEditingId(null)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <X className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex-1">
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {index + 1}. {question.text}
+                            </h3>
+                            <span className="inline-block mt-2 px-3 py-1 text-sm font-medium rounded-full bg-purple-100 text-purple-800">
+                              Review Question
+                            </span>
+                          </div>
+                        )}
+                        {editingId !== question.id && (
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => startEditing(question)}
+                              className="text-gray-600 hover:text-gray-700"
+                            >
+                              <Pencil className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteQuestion(question.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

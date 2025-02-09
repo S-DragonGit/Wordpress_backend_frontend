@@ -33,11 +33,11 @@ const RecurringComponent: React.FC<RecurringComponentProps> = ({
   occurrences,
   setOccurrences,
 }) => {
-  const daysOfWeek = ["M", "T", "W", "Th", "F"]
+  const daysOfWeek = ["M", "T", "W", "Th", "F", "Sa", "Sun"]
 
   return (
-    <div className="p-5 rounded-lg w-full max-w-2xl">
-      <div className={`flex items-center gap-2 ${isRecurring && "bg-primary-light2"} rounded-t-md p-3 w-30`}>
+    <div className="p-5 rounded-lg w-full max-w-4xl">
+      <div className={`flex items-center gap-2 rounded-t-md p-3 w-30`}>
         <input
           type="checkbox"
           checked={isRecurring}
@@ -47,7 +47,7 @@ const RecurringComponent: React.FC<RecurringComponentProps> = ({
         <span className="text-sm font-medium">Recurring?</span>
       </div>
       <div
-        className={`bg-primary-light2 w-full rounded-b-md transition-all duration-500 ease-in-out overflow-hidden ${isRecurring && "p-3"}`}
+        className={`bg-primary-light2 w-full rounded-b-md transition-all duration-200 ease-in-out overflow-hidden ${isRecurring && "px-4"}`}
       >
         {isRecurring && (
           <>
@@ -95,7 +95,7 @@ const RecurringComponent: React.FC<RecurringComponentProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 mb-4">
+                {/* <div className="flex items-center gap-4 mb-4">
                   <span className="text-sm">Time:</span>
                   <input
                     type="time"
@@ -103,7 +103,7 @@ const RecurringComponent: React.FC<RecurringComponentProps> = ({
                     onChange={(e) => setTime(e.target.value)}
                     className="border border-gray-border rounded-md p-1"
                   />
-                </div>
+                </div> */}
               </div>
 
               <div className="flex items-center gap-4 mb-4">
