@@ -13,7 +13,6 @@ import toast from "react-hot-toast";
 import { createZoomLinkApi } from "../../services/events";
 import { Pencil, Trash2, Plus, X, Check } from "lucide-react";
 
-
 const usAddresses = [
   "123 Main St, New York, NY 10001",
   "456 Oak Ave, Los Angeles, CA 90001",
@@ -191,8 +190,8 @@ const CreateEvent: React.FC = () => {
     event_title: "",
     event_description: "",
     event_questions: [],
-    event_start_date: "",
-    event_end_date: "",
+    event_start_time: "",
+    event_end_time: "",
     event_is_virtual: true,
     event_meeting_link: "",
     event_organizer: "",
@@ -220,11 +219,9 @@ const CreateEvent: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [fileName, setFileName] = useState("No file chosen");
   const [eventTitle, setEventTitle] = useState("");
-  const [eventDesc, setEventDesc] = useState("");
-  const [eventStartDate, setEventStartDate] = useState("");
-  // const [eventStartTime, setEventStartTime] = useState("");
-  const [eventEndDate, setEventEndDate] = useState("");
-  // const [eventEndTime, setEventEndTime] = useState("");
+  const [eventDate, setEventDate] = useState("");
+  const [eventStartTime, setEventStartTime] = useState("");
+  const [eventEndTime, setEventEndTime] = useState("");
 
   const handleFileButtonClick = () => {
     if (fileInputRef.current) {
@@ -264,10 +261,10 @@ const CreateEvent: React.FC = () => {
   };
 
   useEffect(() => {
-    if(formData.event_is_virtual === true) {
+    if (formData.event_is_virtual === true) {
       handleZoomLink();
     }
-  }, [formData.event_is_virtual])
+  }, [formData.event_is_virtual]);
 
   const createZoomLink = useMutation({
     mutationFn: async (data: any) => createZoomLinkApi(token, data),
@@ -285,13 +282,13 @@ const CreateEvent: React.FC = () => {
 
   const handleZoomLink = async () => {
     try {
-        const data = {
-          "user_id" : id,
-          "email" : "adnaj@gmail.com",
-          "first_name" : "Rolesh",
-          "last_name" : "A"
-        }
-        await createZoomLink.mutateAsync(data);
+      const data = {
+        user_id: id,
+        email: "adnaj@gmail.com",
+        first_name: "Rolesh",
+        last_name: "A",
+      };
+      await createZoomLink.mutateAsync(data);
     } catch (error) {
       console.error("Submission error:", error);
     }
@@ -463,16 +460,15 @@ const CreateEvent: React.FC = () => {
     try {
       if (
         formData.event_title === "" ||
-        formData.event_start_date === "" ||
-        formData.event_description === "" ||
-        formData.event_end_date === ""
+        formData.event_date === "" ||
+        formData.event_start_time === "" ||
+        formData.event_end_time === ""
       ) {
         if (formData.event_title === "") setEventTitle("Required!");
-        if (formData.event_start_date === "") setEventStartDate("Required!");
-        // if (formData.event_start_time === "") setEventStartTime("Required!");
-        if (!formData.event_end_date) setEventEndDate("Required!");
-        // if (formData.event_end_date === "") setEventEndTime("Required!");
-        if (formData.event_description === "") setEventDesc("Required!");
+        if (formData.event_start_time === "") setEventStartTime("Required!");
+        if (formData.event_end_time === "") setEventEndTime("Required!");
+        if (formData.event_date === "") setEventDate("Required!");
+
         toast("Required fields should be input! Please type.");
         console.log(formData);
       } else {
@@ -521,9 +517,7 @@ const CreateEvent: React.FC = () => {
                 value={formData.event_description}
                 onChange={handleInputChange}
                 required
-                className={`border w-[300px] p-2 rounded ${
-                  eventDesc ? "border-red-600" : "border-gray-border"
-                }`}
+                className={`border w-[300px] p-2 rounded border-gray-border`}
               />
             </div>
             <div className="flex gap-15 justify-between">
@@ -532,13 +526,13 @@ const CreateEvent: React.FC = () => {
               </label>
               <input
                 type="date"
-                id="event_start_date"
-                name="event_start_date"
-                value={formData.event_start_date ?? ""}
+                id="event_date"
+                name="event_date"
+                value={formData.event_date ?? ""}
                 onChange={handleInputChange}
                 required
                 className={`border w-[300px] p-2 rounded ${
-                  eventStartDate ? "border-red-600" : "border-gray-border"
+                  eventDate ? "border-red-600" : "border-gray-border"
                 }`}
               />
             </div>
@@ -549,9 +543,9 @@ const CreateEvent: React.FC = () => {
               <div className="flex justify-between">
                 <input
                   type="time"
-                  id="event_start_date"
-                  name="event_start_date"
-                  value={formData.event_start_date ?? ""}
+                  id="event_start_time"
+                  name="event_start_time"
+                  value={formData.event_start_time ?? ""}
                   onChange={(e) => {
                     const { name, value } = e.target;
                     setFormData((prev) => ({
@@ -561,19 +555,19 @@ const CreateEvent: React.FC = () => {
                   }}
                   required
                   className={`border p-2 rounded ${
-                    eventStartDate ? "border-red-600" : "border-gray-border"
+                    eventStartTime ? "border-red-600" : "border-gray-border"
                   } w-[130px]`}
                 />
                 <span className="p-3">to</span>
                 <input
                   type="time"
-                  id="event_end_date"
-                  name="event_end_date"
-                  value={formData.event_end_date ?? ""}
+                  id="event_end_time"
+                  name="event_end_time"
+                  value={formData.event_end_time ?? ""}
                   onChange={handleInputChange}
                   required
                   className={`border p-2 rounded ${
-                    eventEndDate ? "border-red-600" : "border-gray-border"
+                    eventEndTime ? "border-red-600" : "border-gray-border"
                   } w-[130px]`}
                 />
               </div>

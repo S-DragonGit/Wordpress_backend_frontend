@@ -50,8 +50,8 @@ export interface EventFormData {
   event_title: string;
   event_questions: Question[]
   event_description: string;
-  event_start_date: string | null;
-  event_end_date: string | null;
+  event_start_time: string | null;
+  event_end_time: string | null;
   event_is_virtual: boolean;
   event_meeting_link: string;
   event_organizer: string;

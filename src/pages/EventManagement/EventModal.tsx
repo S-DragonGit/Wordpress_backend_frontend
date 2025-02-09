@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { EventFormData, Question, EventStatus } from "../../types/types";
 import { EventState, selectCurrentEvent } from "../../app/redux/eventSlice";
 import toast from "react-hot-toast";
-import { Pencil, Trash2, Plus, X, Check } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, Check } from "lucide-react";
 // import { getEventById } from "../../services/events"
 // import { useDispatch } from "react-redux";
 
@@ -24,9 +24,9 @@ const EventModal: React.FC = () => {
   const defaultFormData: EventFormData = {
     event_title: "",
     event_description: "",
-    event_start_date: "",
+    event_start_time: "",
     event_questions: [],
-    event_end_date: "",
+    event_end_time: "",
     event_is_virtual: true,
     event_meeting_link: "",
     event_organizer: "",
@@ -48,9 +48,8 @@ const EventModal: React.FC = () => {
     event_category_slugs: [],
     post_id: null,
     event_featured: false,
-    event_popup: false
+    event_popup: false,
   };
-
 
   const event = useSelector((state: { event: EventState }) =>
     selectCurrentEvent(state)
@@ -64,72 +63,78 @@ const EventModal: React.FC = () => {
   const [isDraft, setIsDraft] = useState<string | undefined>("");
   const [eventTitle, setEventTitle] = useState("");
   const [eventDate, setEventDate] = useState("");
-  const [eventStartDate, setEventStartDate] = useState("");
-  const [eventEndDate, setEventEndDate] = useState('');
-  const [eventDesc, setEventDesc] = useState("");
+  const [eventStartTime, setEventStartTime] = useState("");
+  const [eventEndTime, setEventEndTime] = useState("");
 
   const [formData, setFormData] = useState<EventFormData>(
     event ?? defaultFormData
   );
 
-  const [questions, setQuestions] = useState<Question[]>(formData.event_questions);
-  
-    const [newQuestion, setNewQuestion] = useState({
-      text: '',
-      type: 'yesno' as 'yesno' | 'review'
-    });
-  
-    const [editingId, setEditingId] = useState<number | null>(null);
-    const [editText, setEditText] = useState('');
-  
-    const sortQuestions = (questions: Question[]): Question[] => {
-      return [...questions].sort((a, b) => {
+  const [questions, setQuestions] = useState<Question[]>(
+    formData.event_questions
+  );
+
+  const [newQuestion, setNewQuestion] = useState({
+    text: "",
+    type: "yesno" as "yesno" | "review",
+  });
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
+
+  const sortQuestions = (questions: Question[]): Question[] => {
+    return [...questions]
+      .sort((a, b) => {
         // First sort by type (yesno comes first)
         if (a.type !== b.type) {
-          return a.type === 'yesno' ? -1 : 1;
+          return a.type === "yesno" ? -1 : 1;
         }
         // Then sort by ID within each type
         return a.id - b.id;
-      }).map((q, index) => ({ ...q, id: index + 1 }));
-    };
-  
-    const handleAddQuestion = (e: React.FormEvent) => {
-      e.preventDefault();
-      if (newQuestion.text.trim()) {
-        const newQuestions = [...questions, {
+      })
+      .map((q, index) => ({ ...q, id: index + 1 }));
+  };
+
+  const handleAddQuestion = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newQuestion.text.trim()) {
+      const newQuestions = [
+        ...questions,
+        {
           id: questions.length + 1,
           text: newQuestion.text,
           type: newQuestion.type,
-          answer: ''
-        }];
-        setQuestions(sortQuestions(newQuestions));
-        setNewQuestion({ text: '', type: 'yesno' });
-      }
-    };
-  
-    const handleDeleteQuestion = (id: number) => {
-      const filteredQuestions = questions.filter(q => q.id !== id);
-      setQuestions(sortQuestions(filteredQuestions));
-    };
-  
-    const startEditing = (question: Question) => {
-      setEditingId(question.id);
-      setEditText(question.text);
-    };
-  
-    const saveEdit = (id: number) => {
-      if (editText.trim()) {
-        const updatedQuestions = questions.map(q =>
-          q.id === id ? { ...q, text: editText } : q
-        );
-        setQuestions(sortQuestions(updatedQuestions));
-        setEditingId(null);
-      }
-    };
-  
-    // Group questions by type
-    const yesNoQuestions = questions.filter(q => q.type === 'yesno');
-    const reviewQuestions = questions.filter(q => q.type === 'review');
+          answer: "",
+        },
+      ];
+      setQuestions(sortQuestions(newQuestions));
+      setNewQuestion({ text: "", type: "yesno" });
+    }
+  };
+
+  const handleDeleteQuestion = (id: number) => {
+    const filteredQuestions = questions.filter((q) => q.id !== id);
+    setQuestions(sortQuestions(filteredQuestions));
+  };
+
+  const startEditing = (question: Question) => {
+    setEditingId(question.id);
+    setEditText(question.text);
+  };
+
+  const saveEdit = (id: number) => {
+    if (editText.trim()) {
+      const updatedQuestions = questions.map((q) =>
+        q.id === id ? { ...q, text: editText } : q
+      );
+      setQuestions(sortQuestions(updatedQuestions));
+      setEditingId(null);
+    }
+  };
+
+  // Group questions by type
+  const yesNoQuestions = questions.filter((q) => q.type === "yesno");
+  const reviewQuestions = questions.filter((q) => q.type === "review");
 
   useEffect(() => {
     setIsDraft(event?.event_status);
@@ -198,7 +203,7 @@ const EventModal: React.FC = () => {
           result.push(value);
         }
       }
-      console.log(result)
+      console.log(result);
 
       return result;
     } catch (error) {
@@ -206,7 +211,6 @@ const EventModal: React.FC = () => {
       return [];
     }
   };
-  
 
   // Modify your handleCategoryChange function
   const handleCategoryChange = (category: string, checked: boolean) => {
@@ -361,16 +365,15 @@ const EventModal: React.FC = () => {
     try {
       if (
         formData.event_title === "" ||
-        formData.event_start_date === "" ||
         formData.event_date === "" ||
-        formData.event_description === "" ||
-        formData.event_end_date === ""
+        formData.event_start_time === "" ||
+        formData.event_end_time === ""
       ) {
         if (formData.event_title === "") setEventTitle("Required!");
-        if (formData.event_start_date === "") setEventStartDate("Required!");
+        if (formData.event_start_time === "") setEventStartTime("Required!");
+        if (formData.event_end_time === "") setEventEndTime("Required!");
         if (formData.event_date === "") setEventDate("Required!");
-        if (formData.event_description === "") setEventDesc("Required!");
-        if (formData.event_end_date === "") setEventEndDate("Required!");
+
         toast("Required fields should be input! Please type.");
         console.log(formData);
       } else {
@@ -423,14 +426,12 @@ const EventModal: React.FC = () => {
                 value={formData.event_description}
                 onChange={handleInputChange}
                 required
-                className={`border w-[300px] p-2 rounded ${
-                  eventDesc ? "border-red-600" : "border-gray-border"
-                }`}
+                className={`border w-[300px] p-2 rounded border-gray-border`}
               />
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>Event Date
+                <span className="text-red-500"></span>*Event Date
               </label>
               <input
                 type="date"
@@ -446,14 +447,14 @@ const EventModal: React.FC = () => {
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>Event Time
+                <span className="text-red-500"></span>*Event Time
               </label>
-              <div className="flex w-[300px] justify-between">
+              <div className="flex justify-between">
                 <input
-                  type="date"
-                  id="event_start_date"
-                  name="event_start_date"
-                  value={formData.event_start_date ?? ""}
+                  type="time"
+                  id="event_start_time"
+                  name="event_start_time"
+                  value={formData.event_start_time ?? ""}
                   onChange={(e) => {
                     const { name, value } = e.target;
                     setFormData((prev) => ({
@@ -463,20 +464,20 @@ const EventModal: React.FC = () => {
                   }}
                   required
                   className={`border p-2 rounded ${
-                    eventStartDate ? "border-red-600" : "border-gray-border"
-                  }`}
+                    eventStartTime ? "border-red-600" : "border-gray-border"
+                  } w-[130px]`}
                 />
                 <span className="p-3">to</span>
                 <input
-                  type="date"
-                  id="event_end_date"
-                  name="event_end_date"
-                  value={formData.event_end_date ?? ""}
+                  type="time"
+                  id="event_end_time"
+                  name="event_end_time"
+                  value={formData.event_end_time ?? ""}
                   onChange={handleInputChange}
                   required
                   className={`border p-2 rounded ${
-                    eventEndDate ? "border-red-600" : "border-gray-border"
-                  }`}
+                    eventEndTime ? "border-red-600" : "border-gray-border"
+                  } w-[130px]`}
                 />
               </div>
             </div>
@@ -630,58 +631,54 @@ const EventModal: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>          
+          </div>
         </div>
       </div>
       <div className="mt-4">
-          <RecurringComponent
-            isRecurring={formData.event_recurring}
-            setIsRecurring={handleRecurringChange}
-            repeatEvery={formData.event_repeat_every}
-            setRepeatEvery={(value) =>
-              setFormData((prev) => ({ ...prev, event_repeat_every: value }))
-            }
-            selectedDays={formData.event_repeat_on.split(",")}
-            toggleDay={handleRepeatOnChange}
-            endOption={
-              formData.event_never
-                ? "never"
-                : formData.event_on
-                ? "on"
-                : "after"
-            }
-            setEndOption={(option) => {
-              if (option === "never")
-                setFormData((prev) => ({
-                  ...prev,
-                  event_never: true,
-                  event_on: "",
-                  event_after: 4,
-                }));
-              else if (option === "on")
-                setFormData((prev) => ({
-                  ...prev,
-                  event_never: false,
-                  event_on: new Date().toISOString().split("T")[0],
-                  event_after: 4,
-                }));
-              else
-                setFormData((prev) => ({
-                  ...prev,
-                  event_never: false,
-                  event_on: "",
-                  event_after: 4,
-                }));
-            }}
-            endDate={formData.event_on}
-            setEndDate={(value) =>
-              setFormData((prev) => ({ ...prev, event_on: value }))
-            }
-            occurrences={formData.event_after}
-            setOccurrences={(value) =>
-              setFormData((prev) => ({ ...prev, event_after: value }))
-            }
-          />
+        <RecurringComponent
+          isRecurring={formData.event_recurring}
+          setIsRecurring={handleRecurringChange}
+          repeatEvery={formData.event_repeat_every}
+          setRepeatEvery={(value) =>
+            setFormData((prev) => ({ ...prev, event_repeat_every: value }))
+          }
+          selectedDays={formData.event_repeat_on.split(",")}
+          toggleDay={handleRepeatOnChange}
+          endOption={
+            formData.event_never ? "never" : formData.event_on ? "on" : "after"
+          }
+          setEndOption={(option) => {
+            if (option === "never")
+              setFormData((prev) => ({
+                ...prev,
+                event_never: true,
+                event_on: "",
+                event_after: 4,
+              }));
+            else if (option === "on")
+              setFormData((prev) => ({
+                ...prev,
+                event_never: false,
+                event_on: new Date().toISOString().split("T")[0],
+                event_after: 4,
+              }));
+            else
+              setFormData((prev) => ({
+                ...prev,
+                event_never: false,
+                event_on: "",
+                event_after: 4,
+              }));
+          }}
+          endDate={formData.event_on}
+          setEndDate={(value) =>
+            setFormData((prev) => ({ ...prev, event_on: value }))
+          }
+          occurrences={formData.event_after}
+          setOccurrences={(value) =>
+            setFormData((prev) => ({ ...prev, event_after: value }))
+          }
+        />
       </div>
 
       <div className="grid grid-cols-6 gap-2">
@@ -708,7 +705,9 @@ const EventModal: React.FC = () => {
                 <input
                   type="text"
                   value={newQuestion.text}
-                  onChange={(e) => setNewQuestion({ ...newQuestion, text: e.target.value })}
+                  onChange={(e) =>
+                    setNewQuestion({ ...newQuestion, text: e.target.value })
+                  }
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Enter your question..."
                 />
@@ -717,8 +716,10 @@ const EventModal: React.FC = () => {
                 <label className="flex items-center">
                   <input
                     type="radio"
-                    checked={newQuestion.type === 'yesno'}
-                    onChange={() => setNewQuestion({ ...newQuestion, type: 'yesno' })}
+                    checked={newQuestion.type === "yesno"}
+                    onChange={() =>
+                      setNewQuestion({ ...newQuestion, type: "yesno" })
+                    }
                     className="mr-2"
                   />
                   Yes/No Question
@@ -726,8 +727,10 @@ const EventModal: React.FC = () => {
                 <label className="flex items-center">
                   <input
                     type="radio"
-                    checked={newQuestion.type === 'review'}
-                    onChange={() => setNewQuestion({ ...newQuestion, type: 'review' })}
+                    checked={newQuestion.type === "review"}
+                    onChange={() =>
+                      setNewQuestion({ ...newQuestion, type: "review" })
+                    }
                     className="mr-2"
                   />
                   Review Question
@@ -741,15 +744,20 @@ const EventModal: React.FC = () => {
               </button>
             </form>
           </div>
-  
+
           <div className="flex p-6 gap-8 xl:flex-row flex-col justify-between">
             {/* Yes/No Questions Section */}
             {yesNoQuestions.length > 0 && (
               <div className="w-full xl:w-1/2">
-                <h2 className="text-xl font-semibold mb-4 text-blue-800">Yes/No Questions</h2>
+                <h2 className="text-xl font-semibold mb-4 text-blue-800">
+                  Yes/No Questions
+                </h2>
                 <div className="space-y-4">
                   {yesNoQuestions.map((question, index) => (
-                    <div key={question.id} className="bg-primary-light shadow rounded-lg p-6 border-l-4 border-blue-500">
+                    <div
+                      key={question.id}
+                      className="bg-primary-light shadow rounded-lg p-6 border-l-4 border-blue-500"
+                    >
                       <div className="flex justify-between items-start">
                         {editingId === question.id ? (
                           <div className="flex-1 mr-4">
@@ -810,10 +818,15 @@ const EventModal: React.FC = () => {
             {/* Review Questions Section */}
             {reviewQuestions.length > 0 && (
               <div className="w-full xl:w-1/2">
-                <h2 className="text-xl font-semibold mb-4 text-purple-800">Review Questions</h2>
+                <h2 className="text-xl font-semibold mb-4 text-purple-800">
+                  Review Questions
+                </h2>
                 <div className="space-y-4">
                   {reviewQuestions.map((question, index) => (
-                    <div key={question.id} className="bg-primary-light shadow rounded-lg p-6 border-l-4 border-purple-500">
+                    <div
+                      key={question.id}
+                      className="bg-primary-light shadow rounded-lg p-6 border-l-4 border-purple-500"
+                    >
                       <div className="flex justify-between items-start">
                         {editingId === question.id ? (
                           <div className="flex-1 mr-4">
@@ -920,7 +933,9 @@ const EventModal: React.FC = () => {
                           <input
                             type="checkbox"
                             className="w-4 h-4"
-                            checked={formData.event_category_slugs.includes(item)}
+                            checked={formData.event_category_slugs.includes(
+                              item
+                            )}
                             onChange={(e) =>
                               handleCategoryChange(item, e.target.checked)
                             }
@@ -934,29 +949,33 @@ const EventModal: React.FC = () => {
               ))}
             </div>
             <div className="flex gap-4 justify-between mt-4 m-auto">
-              {isDraft === "draft" ?
-              <><button
-                name="updateandpublish"
-                className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary"
-                onClick={handleSubmit}
-              >
-                Create and Publish
-              </button>
-              <button
-                className="p-2 px-4 rounded-md bg-primary text-white text-sm"
-                onClick={handleSubmit}
-              >
-                Create in Drafts
-              </button></> :
-              <button
-              className="p-2 px-4 rounded-md bg-primary text-white text-sm"
-              onClick={backSubmit}
-            >
-              Back
-            </button>}
+              {isDraft === "draft" ? (
+                <>
+                  <button
+                    name="updateandpublish"
+                    className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary"
+                    onClick={handleSubmit}
+                  >
+                    Create and Publish
+                  </button>
+                  <button
+                    className="p-2 px-4 rounded-md bg-primary text-white text-sm"
+                    onClick={handleSubmit}
+                  >
+                    Create in Drafts
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="p-2 px-4 rounded-md bg-primary text-white text-sm"
+                  onClick={backSubmit}
+                >
+                  Back
+                </button>
+              )}
             </div>
           </div>
-        </div>            
+        </div>
       </div>
     </>
   );
