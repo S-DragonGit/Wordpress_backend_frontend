@@ -11,11 +11,106 @@ import { useNavigate } from "react-router-dom";
 import { EventFormData, Question, EventStatus } from "../../types/types";
 import { EventState, selectCurrentEvent } from "../../app/redux/eventSlice";
 import toast from "react-hot-toast";
-import { Pencil, Trash2, Plus, X, Check } from 'lucide-react';
+import { Pencil, Trash2, Plus, X, Check } from "lucide-react";
 // import { getEventById } from "../../services/events"
 // import { useDispatch } from "react-redux";
 
+const usAddresses = [
+  "123 Main St, New York, NY 10001",
+  "456 Oak Ave, Los Angeles, CA 90001",
+  "789 Elm St, Chicago, IL 60601",
+  "321 Pine Rd, Houston, TX 77001",
+  "654 Maple Dr, Miami, FL 33101",
+  "987 Cedar Ln, Seattle, WA 98101",
+  "246 Birch Ct, Boston, MA 02101",
+  "135 Willow Way, San Francisco, CA 94101",
+  "864 Spruce St, Denver, CO 80201",
+  "753 Ash Ave, Atlanta, GA 30301",
+  "951 Oakwood Blvd, Dallas, TX 75201",
+  "357 Pinecrest Rd, Phoenix, AZ 85001",
+  "159 Elmwood Ave, Philadelphia, PA 19101",
+  "753 Maplewood Dr, San Diego, CA 92101",
+  "852 Cedarwood Ln, Austin, TX 78701",
+  "741 Birchwood Ct, Portland, OR 97201",
+  "963 Willowbrook Rd, Las Vegas, NV 89101",
+  "852 Sprucewood Ave, Nashville, TN 37201",
+  "147 Oakridge Dr, San Antonio, TX 78201",
+  "369 Mapleleaf Ln, Charlotte, NC 28201",
+  "258 Pinegrove Rd, Columbus, OH 43201",
+  "741 Cedargrove Ave, Indianapolis, IN 46201",
+  "963 Birchgrove Ct, Fort Worth, TX 76101",
+  "852 Willowgrove Dr, Detroit, MI 48201",
+  "147 Ashwood Rd, El Paso, TX 79901",
+  "369 Oakleaf Ave, Memphis, TN 38101",
+  "258 Maplegrove Ln, Baltimore, MD 21201",
+  "741 Cedarleaf Rd, Boston, MA 02201",
+  "963 Pineleaf Ave, Seattle, WA 98201",
+  "852 Birchleaf Dr, Washington, DC 20001",
+  "147 Willowleaf Ct, Denver, CO 80301",
+  "369 Ashleaf Rd, Nashville, TN 37301",
+  "258 Oakgrove Ave, Louisville, KY 40201",
+  "741 Maplewood Ln, Milwaukee, WI 53201",
+  "963 Cedarwood Rd, Albuquerque, NM 87101",
+  "852 Pinewood Ave, Tucson, AZ 85701",
+  "147 Birchwood Ln, Fresno, CA 93701",
+  "369 Willowwood Rd, Sacramento, CA 95801",
+  "258 Ashwood Ave, Long Beach, CA 90801",
+  "741 Oakwood Ln, Kansas City, MO 64101",
+  "963 Mapleleaf Rd, Mesa, AZ 85201",
+  "852 Cedarleaf Ave, Atlanta, GA 30301",
+  "147 Pineleaf Ln, Virginia Beach, VA 23451",
+  "369 Birchleaf Rd, Omaha, NE 68101",
+  "258 Willowleaf Ave, Colorado Springs, CO 80901",
+  "741 Ashleaf Ln, Raleigh, NC 27601",
+  "963 Oakgrove Rd, Miami, FL 33101",
+  "852 Maplegrove Ave, Oakland, CA 94601",
+  "147 Cedargrove Ln, Minneapolis, MN 55401",
+  "369 Pinegrove Rd, Tulsa, OK 74101",
+];
+
+export function parsePHPSerialized(input: string | Question[]): Question[] {
+  if (Array.isArray(input)) {
+    return input;
+  }
+
+  const questions: Question[] = [];
+  const regex = /i:\d+;a:4:\{s:2:"id";i:(\d+);s:4:"text";s:\d+:"([^"]*)";s:4:"type";s:\d+:"([^"]*)";s:6:"answer";s:\d+:"([^"]*)";}/g;
+  let match;
+
+  while ((match = regex.exec(input)) !== null) {
+    const [, id, text, type] = match;
+    questions.push({
+      id: Number.parseInt(id),
+      text,
+      type: type as "yesno" | "review",
+    });
+  }
+
+  if (questions.length === 0) {
+    console.error("Failed to parse any questions from the input");
+  }
+
+  return questions;
+}
+
+
 const EventModal: React.FC = () => {
+  const [value, setValue] = useState("");
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [filteredAddresses, setFilteredAddresses] = useState(usAddresses);
+  
+    useEffect(() => {
+      if (value) {
+        setFilteredAddresses(
+          usAddresses.filter((address) =>
+            address.toLowerCase().includes(value.toLowerCase())
+          )
+        );
+      } else {
+        setFilteredAddresses(usAddresses);
+      }
+    }, [value]);
+
   const token = useSelector(selectCurrentToken);
   // const data = useSelector(selectCurrentId);
   // const dispatch = useDispatch();
@@ -24,10 +119,8 @@ const EventModal: React.FC = () => {
   const defaultFormData: EventFormData = {
     event_title: "",
     event_description: "",
-    event_start_date: "",
-    event_questions: [],
     event_start_time: "",
-    event_end_date: "",
+    event_questions: [],
     event_end_time: "",
     event_is_virtual: true,
     event_meeting_link: "",
@@ -39,7 +132,7 @@ const EventModal: React.FC = () => {
     event_recurring: false,
     event_repeat_every: "1",
     event_repeat_on: "",
-    event_time: "",
+    event_date: "",
     event_never: true,
     event_on: "",
     event_after: 4,
@@ -50,88 +143,98 @@ const EventModal: React.FC = () => {
     event_category_slugs: [],
     post_id: null,
     event_featured: false,
+    event_popup: false,
   };
-
 
   const event = useSelector((state: { event: EventState }) =>
     selectCurrentEvent(state)
   );
 
   useEffect(() => {
-    console.log("hello");
     setFormData(event ?? defaultFormData);
   }, [event]);
 
   const [isDraft, setIsDraft] = useState<string | undefined>("");
   const [eventTitle, setEventTitle] = useState("");
-  const [eventStartDate, setEventStartDate] = useState("");
+  const [eventDate, setEventDate] = useState("");
   const [eventStartTime, setEventStartTime] = useState("");
-  // const [eventEndDate, setEventEndDate] = useState('');
   const [eventEndTime, setEventEndTime] = useState("");
-  const [eventDesc, setEventDesc] = useState("");
 
   const [formData, setFormData] = useState<EventFormData>(
     event ?? defaultFormData
   );
 
-  const [questions, setQuestions] = useState<Question[]>(formData.event_questions);
-  
-    const [newQuestion, setNewQuestion] = useState({
-      text: '',
-      type: 'yesno' as 'yesno' | 'review'
-    });
-  
-    const [editingId, setEditingId] = useState<number | null>(null);
-    const [editText, setEditText] = useState('');
-  
-    const sortQuestions = (questions: Question[]): Question[] => {
-      return [...questions].sort((a, b) => {
+  const [questions, setQuestions] = useState<Question[]>([]);
+
+  useEffect(() => {
+    if (event?.event_questions) {
+      const parsedQuestions = parsePHPSerialized(event.event_questions)
+      console.log("parsedQuestions", parsedQuestions)
+      setQuestions(parsedQuestions)
+    }
+  }, [event])
+
+
+  const [newQuestion, setNewQuestion] = useState({
+    text: "",
+    type: "yesno" as "yesno" | "review",
+  });
+
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
+
+  const sortQuestions = (questions: Question[]): Question[] => {
+    return [...questions]
+      .sort((a, b) => {
         // First sort by type (yesno comes first)
         if (a.type !== b.type) {
-          return a.type === 'yesno' ? -1 : 1;
+          return a.type === "yesno" ? -1 : 1;
         }
         // Then sort by ID within each type
         return a.id - b.id;
-      }).map((q, index) => ({ ...q, id: index + 1 }));
-    };
-  
-    const handleAddQuestion = (e: React.FormEvent) => {
-      e.preventDefault();
-      if (newQuestion.text.trim()) {
-        const newQuestions = [...questions, {
+      })
+      .map((q, index) => ({ ...q, id: index + 1 }));
+  };
+
+  const handleAddQuestion = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newQuestion.text.trim()) {
+      const newQuestions = [
+        ...questions,
+        {
           id: questions.length + 1,
           text: newQuestion.text,
           type: newQuestion.type,
-          answer: ''
-        }];
-        setQuestions(sortQuestions(newQuestions));
-        setNewQuestion({ text: '', type: 'yesno' });
-      }
-    };
-  
-    const handleDeleteQuestion = (id: number) => {
-      const filteredQuestions = questions.filter(q => q.id !== id);
-      setQuestions(sortQuestions(filteredQuestions));
-    };
-  
-    const startEditing = (question: Question) => {
-      setEditingId(question.id);
-      setEditText(question.text);
-    };
-  
-    const saveEdit = (id: number) => {
-      if (editText.trim()) {
-        const updatedQuestions = questions.map(q =>
-          q.id === id ? { ...q, text: editText } : q
-        );
-        setQuestions(sortQuestions(updatedQuestions));
-        setEditingId(null);
-      }
-    };
-  
-    // Group questions by type
-    const yesNoQuestions = questions.filter(q => q.type === 'yesno');
-    const reviewQuestions = questions.filter(q => q.type === 'review');
+        },
+      ];
+      setQuestions(sortQuestions(newQuestions));
+      setNewQuestion({ text: "", type: "yesno" });
+    }
+  };
+
+  const handleDeleteQuestion = (id: number) => {
+    const filteredQuestions = questions.filter((q) => q.id !== id);
+    setQuestions(sortQuestions(filteredQuestions));
+  };
+
+  const startEditing = (question: Question) => {
+    setEditingId(question.id);
+    setEditText(question.text);
+  };
+
+  const saveEdit = (id: number) => {
+    if (editText.trim()) {
+      const updatedQuestions = questions.map((q) =>
+        q.id === id ? { ...q, text: editText } : q
+      );
+      setQuestions(sortQuestions(updatedQuestions));
+      setEditingId(null);
+    }
+  };
+
+  // Group questions by type
+  const yesNoQuestions = questions.filter((q) => q.type === "yesno");
+  const reviewQuestions = questions.filter((q) => q.type === "review");
 
   useEffect(() => {
     setIsDraft(event?.event_status);
@@ -177,58 +280,66 @@ const EventModal: React.FC = () => {
     }));
   };
 
-  // Function to parse PHP serialized string to array
-  const phpUnserialize = (serializedString: string): string[] => {
-    try {
-      // Basic parsing for this specific format
-      // Remove the "a:2:{" from start and "}" from end
-      const content = serializedString
-        .replace(/^a:\d+:{/, "") // Remove prefix
-        .replace(/}$/, ""); // Remove suffix
-
-      // Split into pairs and extract only the string values
-      const pairs = content.split(";");
-      const result: string[] = [];
-
-      for (let i = 0; i < pairs.length - 1; i += 2) {
-        // Skip the index part (i:0) and get only the string value
-        const value = pairs[i + 1]
-          .replace(/^s:\d+:"/, "") // Remove string prefix
-          .replace(/"$/, ""); // Remove trailing quote
-
-        if (value) {
-          result.push(value);
-        }
-      }
-      console.log(result)
-
-      return result;
-    } catch (error) {
-      console.error("Error parsing PHP serialized string:", error);
-      return [];
-    }
-  };
   
-
-  // Modify your handleCategoryChange function
-  const handleCategoryChange = (category: string, checked: boolean) => {
-    setFormData((prev) => {
-      // Convert the serialized string to array if it's a string
-      const currentSlugs =
-        typeof prev.event_category_slugs === "string"
-          ? phpUnserialize(prev.event_category_slugs)
-          : Array.isArray(prev.event_category_slugs)
-          ? prev.event_category_slugs
-          : [];
-
-      return {
-        ...prev,
-        event_category_slugs: checked
-          ? [...currentSlugs, category]
-          : currentSlugs.filter((c) => c !== category),
-      };
-    });
-  };
+    const handleCategoryChange = (category: string, checked: boolean) => {
+      const tag = meetingTags.find((t) => t.category === category);
+  
+      if (tag) {
+        setFormData((prev) => {
+          const newSlugs = [...prev.event_category_slugs];
+  
+          if (checked) {
+            // Add category and all its items
+            const itemsToAdd = [category, ...tag.items].filter(
+              (item) => !newSlugs.includes(item)
+            );
+            return {
+              ...prev,
+              event_category_slugs: [...newSlugs, ...itemsToAdd],
+            };
+          } else {
+            // Remove category and all its items
+            return {
+              ...prev,
+              event_category_slugs: newSlugs.filter(
+                (slug) => slug !== category && !tag.items.includes(slug)
+              ),
+            };
+          }
+        });
+      } else {
+        // Handle individual item
+        setFormData((prev) => {
+          if (checked && !prev.event_category_slugs.includes(category)) {
+            return {
+              ...prev,
+              event_category_slugs: [...prev.event_category_slugs, category],
+            };
+          } else if (!checked) {
+            return {
+              ...prev,
+              event_category_slugs: prev.event_category_slugs.filter(
+                (slug) => slug !== category
+              ),
+            };
+          }
+          return prev;
+        });
+      }
+    };
+  
+    const isParentChecked = (tag: any): boolean => {
+      return tag.items.every((item: any) =>
+        formData.event_category_slugs.includes(item)
+      );
+    };
+  
+    const isParentIndeterminate = (tag: any): boolean => {
+      const checkedItems = tag.items.filter((item: any) =>
+        formData.event_category_slugs.includes(item)
+      );
+      return checkedItems.length > 0 && checkedItems.length < tag.items.length;
+    };
 
   interface FileValidationResult {
     isValid: boolean;
@@ -363,17 +474,15 @@ const EventModal: React.FC = () => {
     try {
       if (
         formData.event_title === "" ||
-        formData.event_start_date === "" ||
+        formData.event_date === "" ||
         formData.event_start_time === "" ||
-        formData.event_description === "" ||
         formData.event_end_time === ""
       ) {
         if (formData.event_title === "") setEventTitle("Required!");
-        if (formData.event_start_date === "") setEventStartDate("Required!");
         if (formData.event_start_time === "") setEventStartTime("Required!");
-        // if(!formData.event_end_date) setEventEndDate("Required!")
-        if (formData.event_description === "") setEventDesc("Required!");
-        if (formData.event_end_date === "") setEventEndTime("Required!");
+        if (formData.event_end_time === "") setEventEndTime("Required!");
+        if (formData.event_date === "") setEventDate("Required!");
+
         toast("Required fields should be input! Please type.");
         console.log(formData);
       } else {
@@ -396,13 +505,13 @@ const EventModal: React.FC = () => {
 
   return (
     <>
-      <h2 className="pl-[30px] pt-[30px] font-bold">Create New Event</h2>
+      <h2 className="pl-[30px] pt-[30px] font-bold">Event Details</h2>
       <div className="flex 2xl:flex-row flex-col justify-between items-center w-full m-auto gap-2">
-        <div className="smd:grid gap-20 gap-sm-5 grid-cols-2 mt-10 px-6 w-full">
+        <div className="smd:grid gap-20 gap-sm-5 grid-cols-2 mt-10 px-6 w-xl-2/3 w-sm-full">
           <div className="flex flex-col gap-5">
             <div className="flex gap-4 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>Event Title
+                <span className="text-red-500"></span>*Event Title
               </label>
               <input
                 type="text"
@@ -426,32 +535,30 @@ const EventModal: React.FC = () => {
                 value={formData.event_description}
                 onChange={handleInputChange}
                 required
-                className={`border w-[300px] p-2 rounded ${
-                  eventDesc ? "border-red-600" : "border-gray-border"
-                }`}
+                className={`border w-[300px] p-2 rounded border-gray-border`}
               />
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>Event Date
+                <span className="text-red-500"></span>*Event Date
               </label>
               <input
                 type="date"
-                id="event_start_date"
-                name="event_start_date"
-                value={formData.event_start_date ?? ""}
+                id="event_date"
+                name="event_date"
+                value={formData.event_date ?? ""}
                 onChange={handleInputChange}
                 required
                 className={`border w-[300px] p-2 rounded ${
-                  eventStartDate ? "border-red-600" : "border-gray-border"
+                  eventDate ? "border-red-600" : "border-gray-border"
                 }`}
               />
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>Event Time
+                <span className="text-red-500"></span>*Event Time
               </label>
-              <div className="flex w-[300px] justify-between">
+              <div className="flex justify-between">
                 <input
                   type="time"
                   id="event_start_time"
@@ -467,7 +574,7 @@ const EventModal: React.FC = () => {
                   required
                   className={`border p-2 rounded ${
                     eventStartTime ? "border-red-600" : "border-gray-border"
-                  }`}
+                  } w-[130px]`}
                 />
                 <span className="p-3">to</span>
                 <input
@@ -479,7 +586,7 @@ const EventModal: React.FC = () => {
                   required
                   className={`border p-2 rounded ${
                     eventEndTime ? "border-red-600" : "border-gray-border"
-                  }`}
+                  } w-[130px]`}
                 />
               </div>
             </div>
@@ -525,31 +632,87 @@ const EventModal: React.FC = () => {
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>Meeting link
+                <span className="text-red-500"></span>Meeting Link
               </label>
               <input
                 type="text"
                 id="event_meeting_link"
                 name="event_meeting_link"
                 value={formData.event_meeting_link}
+                disabled={!formData.event_is_virtual}
                 onChange={handleInputChange}
                 required
-                className="border w-[300px] border-gray-border p-2 rounded"
+                className={`border w-[300px] border-gray-border p-2 rounded ${
+                  formData.event_is_virtual ? "" : "disabled:cursor-not-allowed"
+                }`}
               />
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
                 <span className="text-red-500"></span>Event Location
               </label>
-              <input
-                type="text"
-                id="event_location"
-                name="event_location"
-                value={formData.event_location}
-                onChange={handleInputChange}
-                required
-                className="border w-[300px] border-gray-border p-2 rounded"
-              />
+              <div style={{ position: "relative", width: "300px" }}>
+                <input
+                  type="text"
+                  id="event_location"
+                  name="event_location"
+                  value={formData.event_location}
+                  onChange={(e) => setValue(e.target.value)}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() =>
+                    setTimeout(() => setShowSuggestions(false), 200)
+                  }
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "8px",
+                    border: "1px solid #ccc",
+                    borderRadius: "4px",
+                  }}
+                  placeholder="Enter event location"
+                />
+                {showSuggestions && (
+                  <ul
+                    style={{
+                      position: "absolute",
+                      top: "100%",
+                      left: 0,
+                      right: 0,
+                      maxHeight: "200px",
+                      overflowY: "auto",
+                      border: "1px solid #ccc",
+                      borderTop: "none",
+                      borderRadius: "0 0 4px 4px",
+                      backgroundColor: "white",
+                      listStyle: "none",
+                      margin: 0,
+                      padding: 0,
+                      zIndex: 1,
+                    }}
+                  >
+                    {filteredAddresses.map((address) => (
+                      <li
+                        key={address}
+                        onClick={() => {
+                          setValue(address);
+                          setShowSuggestions(false);
+                          setFormData((prev) => ({
+                            ...prev,
+                            event_location: address,
+                          }));
+                        }}
+                        style={{
+                          padding: "8px",
+                          cursor: "pointer",
+                        }}
+                        onMouseDown={(e) => e.preventDefault()}
+                      >
+                        {address}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex flex-col gap-5">
@@ -561,7 +724,7 @@ const EventModal: React.FC = () => {
                 type="text"
                 id="event_members"
                 name="event_members"
-                value={formData.event_members.join(",")}
+                // value={formData.event_members.join(",")}
                 onChange={(e) => {
                   // Convert back to number array when handling changes
                   const numbers = e.target.value
@@ -633,73 +796,199 @@ const EventModal: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>          
+          </div>
+        </div>
+        <div className="w-lg-1/3 w-sm-full">
+          <h5 className="font-semibold text-lg mb-4 text-center">
+            Meeting Tags
+          </h5>
+          <div className="w-5/6 flex flex-col items-center p-2 bg-primary-light rounded-lg m-auto">
+            <div className="w-full flex justify-center items-center p-2 border-b-[1px] pb-0">
+              <div className="flex w-1/2 justify-center">
+                <input
+                  type="checkbox"
+                  checked={formData.event_featured}
+                  onChange={(e) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      event_featured: e.target.checked === true,
+                    }));
+                  }}
+                />
+                <span className="p-3 font-bold text-shadow-md">
+                  Featured Event
+                </span>
+              </div>
+              <div className="flex w-1/2 justify-center">
+                <input
+                  type="checkbox"
+                  checked={formData.event_popup}
+                  onChange={(e) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      event_popup: e.target.checked === true,
+                    }));
+                  }}
+                />
+                <span className="p-3 font-bold text-shadow-md">
+                  Pop Up Event
+                </span>
+              </div>
+            </div>
+            <div
+              className="w-full max-h-[500px] overflow-y-auto pt-2
+    scrollbar scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100
+    hover:scrollbar-thumb-gray-500"
+            >
+              {meetingTags.map((tag, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-lg shadow-sm mb-4 p-4"
+                >
+                  <div className="flex flex-col">
+                    <label className="flex items-center gap-2 mb-3 cursor-pointer hover:bg-gray-50 p-2 rounded-md">
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={isParentChecked(tag)}
+                        ref={(input) => {
+                          if (input) {
+                            input.indeterminate = isParentIndeterminate(tag);
+                          }
+                        }}
+                        onChange={(e) =>
+                          handleCategoryChange(tag.category, e.target.checked)
+                        }
+                        aria-label={
+                          isParentChecked(tag) ? "Uncheck all" : "Check all"
+                        }
+                      />
+                      <span className="text-sm font-medium text-gray-700">
+                        {tag.category}
+                      </span>
+                    </label>
+
+                    <div className="ml-6 border-l-2 border-gray-100 pl-4">
+                      <div
+                        className={
+                          index === 0
+                            ? "grid grid-cols-2 gap-3"
+                            : "flex flex-col gap-2"
+                        }
+                      >
+                        {tag.items.map((item, idx) => (
+                          <label
+                            key={idx}
+                            className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md"
+                          >
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              checked={formData.event_category_slugs.includes(
+                                item
+                              )}
+                              onChange={(e) =>
+                                handleCategoryChange(item, e.target.checked)
+                              }
+                              aria-label={
+                                formData.event_category_slugs.includes(item)
+                                  ? `Uncheck ${item}`
+                                  : `Check ${item}`
+                              }
+                            />
+                            <span className="text-sm text-gray-600">
+                              {item}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-2 justify-around mt-8 m-auto px-8">
+              {isDraft === "draft" ? (
+                <>
+                  <button
+                    name="updateandpublish"
+                    className="w-2/5 px-4 py-2 rounded-md hover:bg-primary hover:text-white focus:outline-none border duration-300 ease-in-out"
+                    onClick={handleSubmit}
+                  >
+                    Publish
+                  </button>
+                  <button
+                    className="w-2/5 px-4 py-2 rounded-md hover:bg-primary hover:text-white focus:outline-none border duration-300 ease-in-out"
+                    onClick={handleSubmit}
+                  >
+                    Save in Drafts
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="p-2 px-4 rounded-md bg-primary text-white text-sm m-auto w-1/2"
+                  onClick={backSubmit}
+                >
+                  Back
+                </button>
+              )}
+            </div>
         </div>
       </div>
-      <div className="mt-4">
-          <RecurringComponent
-            isRecurring={formData.event_recurring}
-            setIsRecurring={handleRecurringChange}
-            repeatEvery={formData.event_repeat_every}
-            setRepeatEvery={(value) =>
-              setFormData((prev) => ({ ...prev, event_repeat_every: value }))
-            }
-            selectedDays={formData.event_repeat_on.split(",")}
-            toggleDay={handleRepeatOnChange}
-            time={formData.event_time ?? ""}
-            setTime={(value) =>
-              setFormData((prev) => ({ ...prev, event_time: value }))
-            }
-            endOption={
-              formData.event_never
-                ? "never"
-                : formData.event_on
-                ? "on"
-                : "after"
-            }
-            setEndOption={(option) => {
-              if (option === "never")
-                setFormData((prev) => ({
-                  ...prev,
-                  event_never: true,
-                  event_on: "",
-                  event_after: 4,
-                }));
-              else if (option === "on")
-                setFormData((prev) => ({
-                  ...prev,
-                  event_never: false,
-                  event_on: new Date().toISOString().split("T")[0],
-                  event_after: 4,
-                }));
-              else
-                setFormData((prev) => ({
-                  ...prev,
-                  event_never: false,
-                  event_on: "",
-                  event_after: 4,
-                }));
-            }}
-            endDate={formData.event_on}
-            setEndDate={(value) =>
-              setFormData((prev) => ({ ...prev, event_on: value }))
-            }
-            occurrences={formData.event_after}
-            setOccurrences={(value) =>
-              setFormData((prev) => ({ ...prev, event_after: value }))
-            }
-          />
+      <div className="mt-1">
+        <RecurringComponent
+          isRecurring={formData.event_recurring}
+          setIsRecurring={handleRecurringChange}
+          repeatEvery={formData.event_repeat_every}
+          setRepeatEvery={(value) =>
+            setFormData((prev) => ({ ...prev, event_repeat_every: value }))
+          }
+          selectedDays={formData.event_repeat_on.split(",")}
+          toggleDay={handleRepeatOnChange}
+          endOption={
+            formData.event_never ? "never" : formData.event_on ? "on" : "after"
+          }
+          setEndOption={(option) => {
+            if (option === "never")
+              setFormData((prev) => ({
+                ...prev,
+                event_never: true,
+                event_on: "",
+                event_after: 4,
+              }));
+            else if (option === "on")
+              setFormData((prev) => ({
+                ...prev,
+                event_never: false,
+                event_on: new Date().toISOString().split("T")[0],
+                event_after: 4,
+              }));
+            else
+              setFormData((prev) => ({
+                ...prev,
+                event_never: false,
+                event_on: "",
+                event_after: 4,
+              }));
+          }}
+          endDate={formData.event_on}
+          setEndDate={(value) =>
+            setFormData((prev) => ({ ...prev, event_on: value }))
+          }
+          occurrences={formData.event_after}
+          setOccurrences={(value) =>
+            setFormData((prev) => ({ ...prev, event_after: value }))
+          }
+        />
       </div>
 
-      <div className="grid grid-cols-6 gap-2">
-        <div className="col-span-4 bg-gray-50 m-auto">
+      <div className="flex justify-center">
+        <div className="col-span-4 bg-gray-50 m-auto w-full">
           <div className="text-center mb-8">
             <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900">
-              Weekly Review Questions
+              Survey Questions
             </h1>
-            <p className="mt-2 text-lg text-gray-600">
-              Question Management System
-            </p>
           </div>
           {/* Add New Question Form */}
           <div className="shadow rounded-lg p-6 mb-8 bg-primary-light">
@@ -715,7 +1004,9 @@ const EventModal: React.FC = () => {
                 <input
                   type="text"
                   value={newQuestion.text}
-                  onChange={(e) => setNewQuestion({ ...newQuestion, text: e.target.value })}
+                  onChange={(e) =>
+                    setNewQuestion({ ...newQuestion, text: e.target.value })
+                  }
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Enter your question..."
                 />
@@ -724,8 +1015,10 @@ const EventModal: React.FC = () => {
                 <label className="flex items-center">
                   <input
                     type="radio"
-                    checked={newQuestion.type === 'yesno'}
-                    onChange={() => setNewQuestion({ ...newQuestion, type: 'yesno' })}
+                    checked={newQuestion.type === "yesno"}
+                    onChange={() =>
+                      setNewQuestion({ ...newQuestion, type: "yesno" })
+                    }
                     className="mr-2"
                   />
                   Yes/No Question
@@ -733,8 +1026,10 @@ const EventModal: React.FC = () => {
                 <label className="flex items-center">
                   <input
                     type="radio"
-                    checked={newQuestion.type === 'review'}
-                    onChange={() => setNewQuestion({ ...newQuestion, type: 'review' })}
+                    checked={newQuestion.type === "review"}
+                    onChange={() =>
+                      setNewQuestion({ ...newQuestion, type: "review" })
+                    }
                     className="mr-2"
                   />
                   Review Question
@@ -748,15 +1043,20 @@ const EventModal: React.FC = () => {
               </button>
             </form>
           </div>
-  
+
           <div className="flex p-6 gap-8 xl:flex-row flex-col justify-between">
             {/* Yes/No Questions Section */}
             {yesNoQuestions.length > 0 && (
               <div className="w-full xl:w-1/2">
-                <h2 className="text-xl font-semibold mb-4 text-blue-800">Yes/No Questions</h2>
+                <h2 className="text-xl font-semibold mb-4 text-blue-800">
+                  Yes/No Questions
+                </h2>
                 <div className="space-y-4">
                   {yesNoQuestions.map((question, index) => (
-                    <div key={question.id} className="bg-primary-light shadow rounded-lg p-6 border-l-4 border-blue-500">
+                    <div
+                      key={question.id}
+                      className="bg-primary-light shadow rounded-lg p-6 border-l-4 border-blue-500"
+                    >
                       <div className="flex justify-between items-start">
                         {editingId === question.id ? (
                           <div className="flex-1 mr-4">
@@ -817,10 +1117,15 @@ const EventModal: React.FC = () => {
             {/* Review Questions Section */}
             {reviewQuestions.length > 0 && (
               <div className="w-full xl:w-1/2">
-                <h2 className="text-xl font-semibold mb-4 text-purple-800">Review Questions</h2>
+                <h2 className="text-xl font-semibold mb-4 text-purple-800">
+                  Review Questions
+                </h2>
                 <div className="space-y-4">
                   {reviewQuestions.map((question, index) => (
-                    <div key={question.id} className="bg-primary-light shadow rounded-lg p-6 border-l-4 border-purple-500">
+                    <div
+                      key={question.id}
+                      className="bg-primary-light shadow rounded-lg p-6 border-l-4 border-purple-500"
+                    >
                       <div className="flex justify-between items-start">
                         {editingId === question.id ? (
                           <div className="flex-1 mr-4">
@@ -879,94 +1184,11 @@ const EventModal: React.FC = () => {
             )}
           </div>
         </div>
-        <div className="col-span-2">
-          <div className="w-full flex justify-center items-center p-2 mt-12 rounded-l">
-            <input
-              type="checkbox"
-              checked={formData.event_featured}
-              onChange={(e) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  event_featured: e.target.checked === true,
-                }));
-              }}
-            />
-            <span className="p-3">Feature Event</span>
-          </div>
-          <div className="w-5/6 flex flex-col items-center p-2 bg-primary-light rounded-lg m-auto">
-            <h5 className="font-semibold text-lg mb-4">Meeting Tags</h5>
-            <div className="w-full">
-              {meetingTags.map((tag, index) => (
-                <div
-                  key={index}
-                  className="flex flex-col items-center mb-4 mx-2"
-                >
-                  <label className="flex items-center gap-2 mb-2">
-                    <input
-                      type="checkbox"
-                      className="w-4 h-4"
-                      checked={formData.event_category_slugs.includes(
-                        tag.category
-                      )}
-                      onChange={(e) =>
-                        handleCategoryChange(tag.category, e.target.checked)
-                      }
-                    />
-                    <span className="text-sm">{tag.category}</span>
-                  </label>
-                  <div className="bg-primary-light3 p-4 rounded-md w-full flex flex-col items-center border border-gray-border">
-                    <div
-                      className={
-                        index === 0
-                          ? "grid grid-cols-2 gap-2"
-                          : "flex flex-col gap-2 w-full"
-                      }
-                    >
-                      {tag.items.map((item, idx) => (
-                        <label key={idx} className="flex items-center gap-1">
-                          <input
-                            type="checkbox"
-                            className="w-4 h-4"
-                            checked={formData.event_category_slugs.includes(item)}
-                            onChange={(e) =>
-                              handleCategoryChange(item, e.target.checked)
-                            }
-                          />
-                          <span className="text-sm">{item}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex gap-4 justify-between mt-4 m-auto">
-              {isDraft === "draft" ?
-              <><button
-                name="updateandpublish"
-                className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary"
-                onClick={handleSubmit}
-              >
-                Create and Publish
-              </button>
-              <button
-                className="p-2 px-4 rounded-md bg-primary text-white text-sm"
-                onClick={handleSubmit}
-              >
-                Create in Drafts
-              </button></> :
-              <button
-              className="p-2 px-4 rounded-md bg-primary text-white text-sm"
-              onClick={backSubmit}
-            >
-              Back
-            </button>}
-            </div>
-          </div>
-        </div>            
       </div>
     </>
   );
 };
 
 export default EventModal;
+
+

@@ -39,7 +39,6 @@ const EventManagement = () => {
   dispatch(setEvents(eventList));
   // console.log(eventList);
 
-
   const updateEventStatusMutation = useMutation({
     mutationFn: (data: any) => updateEventStatusApi(token, data),
     onSuccess: (data) => {
@@ -67,21 +66,21 @@ const EventManagement = () => {
 
   const navigate = useNavigate();
   const getEvent = useMutation({
-      mutationFn: (data: any) => getEventById(token, data),
-      onSuccess: (data) => {
-        // console.log("Event stasus updated successfully:", data.data.data);
-        dispatch(setCurrentEvent(data.data.data));
-        console.log(data.data.data);
-      },
-      onError: (error) => {
-        console.error("Error creating event:", error);
-      },
-    });
+    mutationFn: (data: any) => getEventById(token, data),
+    onSuccess: (data) => {
+      // console.log("Event stasus updated successfully:", data.data.data);
+      dispatch(setCurrentEvent(data.data.data));
+      console.log(data.data.data);
+    },
+    onError: (error) => {
+      console.error("Error creating event:", error);
+    },
+  });
   const handleOnViewDetails = async (event: any) => {
     const id_data: any = {
       user_id: id,
       post_id: String(Number(event.ID) + 1),
-    }
+    };
     try {
       await getEvent.mutate(id_data);
     } catch (error) {
@@ -94,7 +93,7 @@ const EventManagement = () => {
     const id_data: any = {
       user_id: id,
       post_id: String(Number(event.ID) + 1),
-    }
+    };
     try {
       await getEvent.mutate(id_data);
     } catch (error) {
@@ -136,9 +135,16 @@ const EventManagement = () => {
           </div>
           <div className="w-full">
             {isLoading ? (
-              <p className="items-center">loading...</p>
+              <div className="flex justify-center item-center">
+                <p className="items-center">loading...</p>
+              </div>
             ) : switchTwo === "Published" ? (
-              <TablePublish data={eventList} columns={eventPublishedColumns} onViewDetails={handleOnViewDetails} onViewReviews={handleOnViewReviews} />
+              <TablePublish
+                data={eventList}
+                columns={eventPublishedColumns}
+                onViewDetails={handleOnViewDetails}
+                onViewReviews={handleOnViewReviews}
+              />
             ) : (
               <TableDraft
                 data={eventList}
