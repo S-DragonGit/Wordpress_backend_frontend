@@ -42,14 +42,16 @@ export interface Question {
   type: 'yesno' | 'review';
   answer: string;
 }
+export interface Categories {
+  category: string;
+  items: string[];
+}
 export interface EventFormData {
   event_title: string;
   event_questions: Question[]
   event_description: string;
   event_start_date: string | null;
-  event_start_time: string | null;
   event_end_date: string | null;
-  event_end_time: string | null;
   event_is_virtual: boolean;
   event_meeting_link: string;
   event_organizer: string;
@@ -60,7 +62,7 @@ export interface EventFormData {
   event_recurring: boolean;
   event_repeat_every: string;
   event_repeat_on: string;
-  event_time: string | null;
+  event_date: string | null;
   event_never: boolean;
   event_on: string;
   event_after: number;

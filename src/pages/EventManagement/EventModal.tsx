@@ -26,9 +26,7 @@ const EventModal: React.FC = () => {
     event_description: "",
     event_start_date: "",
     event_questions: [],
-    event_start_time: "",
     event_end_date: "",
-    event_end_time: "",
     event_is_virtual: true,
     event_meeting_link: "",
     event_organizer: "",
@@ -39,7 +37,7 @@ const EventModal: React.FC = () => {
     event_recurring: false,
     event_repeat_every: "1",
     event_repeat_on: "",
-    event_time: "",
+    event_date: "",
     event_never: true,
     event_on: "",
     event_after: 4,
@@ -50,6 +48,7 @@ const EventModal: React.FC = () => {
     event_category_slugs: [],
     post_id: null,
     event_featured: false,
+    event_popup: false
   };
 
 
@@ -64,10 +63,9 @@ const EventModal: React.FC = () => {
 
   const [isDraft, setIsDraft] = useState<string | undefined>("");
   const [eventTitle, setEventTitle] = useState("");
+  const [eventDate, setEventDate] = useState("");
   const [eventStartDate, setEventStartDate] = useState("");
-  const [eventStartTime, setEventStartTime] = useState("");
-  // const [eventEndDate, setEventEndDate] = useState('');
-  const [eventEndTime, setEventEndTime] = useState("");
+  const [eventEndDate, setEventEndDate] = useState('');
   const [eventDesc, setEventDesc] = useState("");
 
   const [formData, setFormData] = useState<EventFormData>(
@@ -364,16 +362,15 @@ const EventModal: React.FC = () => {
       if (
         formData.event_title === "" ||
         formData.event_start_date === "" ||
-        formData.event_start_time === "" ||
+        formData.event_date === "" ||
         formData.event_description === "" ||
-        formData.event_end_time === ""
+        formData.event_end_date === ""
       ) {
         if (formData.event_title === "") setEventTitle("Required!");
         if (formData.event_start_date === "") setEventStartDate("Required!");
-        if (formData.event_start_time === "") setEventStartTime("Required!");
-        // if(!formData.event_end_date) setEventEndDate("Required!")
+        if (formData.event_date === "") setEventDate("Required!");
         if (formData.event_description === "") setEventDesc("Required!");
-        if (formData.event_end_date === "") setEventEndTime("Required!");
+        if (formData.event_end_date === "") setEventEndDate("Required!");
         toast("Required fields should be input! Please type.");
         console.log(formData);
       } else {
@@ -437,13 +434,13 @@ const EventModal: React.FC = () => {
               </label>
               <input
                 type="date"
-                id="event_start_date"
-                name="event_start_date"
-                value={formData.event_start_date ?? ""}
+                id="event_date"
+                name="event_date"
+                value={formData.event_date ?? ""}
                 onChange={handleInputChange}
                 required
                 className={`border w-[300px] p-2 rounded ${
-                  eventStartDate ? "border-red-600" : "border-gray-border"
+                  eventDate ? "border-red-600" : "border-gray-border"
                 }`}
               />
             </div>
@@ -453,10 +450,10 @@ const EventModal: React.FC = () => {
               </label>
               <div className="flex w-[300px] justify-between">
                 <input
-                  type="time"
-                  id="event_start_time"
-                  name="event_start_time"
-                  value={formData.event_start_time ?? ""}
+                  type="date"
+                  id="event_start_date"
+                  name="event_start_date"
+                  value={formData.event_start_date ?? ""}
                   onChange={(e) => {
                     const { name, value } = e.target;
                     setFormData((prev) => ({
@@ -466,19 +463,19 @@ const EventModal: React.FC = () => {
                   }}
                   required
                   className={`border p-2 rounded ${
-                    eventStartTime ? "border-red-600" : "border-gray-border"
+                    eventStartDate ? "border-red-600" : "border-gray-border"
                   }`}
                 />
                 <span className="p-3">to</span>
                 <input
-                  type="time"
-                  id="event_end_time"
-                  name="event_end_time"
-                  value={formData.event_end_time ?? ""}
+                  type="date"
+                  id="event_end_date"
+                  name="event_end_date"
+                  value={formData.event_end_date ?? ""}
                   onChange={handleInputChange}
                   required
                   className={`border p-2 rounded ${
-                    eventEndTime ? "border-red-600" : "border-gray-border"
+                    eventEndDate ? "border-red-600" : "border-gray-border"
                   }`}
                 />
               </div>
@@ -646,10 +643,6 @@ const EventModal: React.FC = () => {
             }
             selectedDays={formData.event_repeat_on.split(",")}
             toggleDay={handleRepeatOnChange}
-            time={formData.event_time ?? ""}
-            setTime={(value) =>
-              setFormData((prev) => ({ ...prev, event_time: value }))
-            }
             endOption={
               formData.event_never
                 ? "never"

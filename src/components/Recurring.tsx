@@ -7,8 +7,6 @@ interface RecurringComponentProps {
   setRepeatEvery: (value: string) => void
   selectedDays: string[]
   toggleDay: (day: string) => void
-  time: string
-  setTime: (value: string) => void
   endOption: "never" | "on" | "after"
   setEndOption: (option: "never" | "on" | "after") => void
   endDate: string
@@ -24,8 +22,6 @@ const RecurringComponent: React.FC<RecurringComponentProps> = ({
   setRepeatEvery,
   selectedDays,
   toggleDay,
-  time,
-  setTime,
   endOption,
   setEndOption,
   endDate,
