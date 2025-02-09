@@ -244,7 +244,7 @@ export const formFieldNotification: FormOneProps[] = [
 export const meetingTags = [
   {
     category: "Therapy",
-    items: ["Individual", "Family", "Trauma", "Support Groups", "Grief Counseling", "Depression/Anxiety"],
+    items: ["Individual", "Family", "Trauma", "Support Groups", "Grief Counseling", "Depression / Anxiety"],
   },
   {
     category: "Health Screening",

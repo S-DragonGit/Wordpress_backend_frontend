@@ -10,9 +10,10 @@ interface TablePublishProps {
   columns: Column[];
   data: any[] | undefined;
   onViewDetails: (row: any) => void;
+  onViewReviews: (row: any) => void;
 }
 
-const TablePublish: React.FC<TablePublishProps> = ({ columns, data, onViewDetails }) => {
+const TablePublish: React.FC<TablePublishProps> = ({ columns, data, onViewDetails, onViewReviews }) => {
   const publishPosts = data?.filter(row => row.post_status === "publish");
 
   return (
@@ -45,6 +46,13 @@ const TablePublish: React.FC<TablePublishProps> = ({ columns, data, onViewDetail
                   col.accessor === "View Details" ?
                   (<button
                     onClick={() => onViewDetails(row)}
+                    className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-light3 hover:text-primary transition-colors"
+                  >
+                    {col.accessor}
+                  </button>) :
+                  col.accessor === "View Reviews" ?
+                  (<button
+                    onClick={() => onViewReviews(row)}
                     className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-light3 hover:text-primary transition-colors"
                   >
                     {col.accessor}

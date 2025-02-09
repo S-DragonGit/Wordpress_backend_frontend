@@ -36,8 +36,15 @@ export interface NotificationFormData {
 }
 
 export type EventStatus = "publish" | "draft";
+export interface Question {
+  id: number;
+  text: string;
+  type: 'yesno' | 'review';
+  answer: string;
+}
 export interface EventFormData {
   event_title: string;
+  event_questions: Question[]
   event_description: string;
   event_start_date: string | null;
   event_start_time: string | null;
@@ -63,5 +70,6 @@ export interface EventFormData {
   event_view_member_list: boolean;
   event_category_slugs: string[];
   post_id: number | null;
-  event_featured : boolean
+  event_featured : boolean;
+  event_popup : boolean;
 }

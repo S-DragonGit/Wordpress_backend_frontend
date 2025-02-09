@@ -90,6 +90,19 @@ const EventManagement = () => {
     navigate(`/eventManagement/${event.ID}`);
   };
 
+  const handleOnViewReviews = async (event: any) => {
+    const id_data: any = {
+      user_id: id,
+      post_id: String(Number(event.ID) + 1),
+    }
+    try {
+      await getEvent.mutate(id_data);
+    } catch (error) {
+      console.error("Submission error:", error);
+    }
+    navigate(`/eventManagement/reviews/${event.ID}`);
+  };
+
   return (
     <div className="flex flex-col items-center w-full gap-5">
       <div className="flex items-center gap-4 justify-between w-full">
@@ -125,7 +138,7 @@ const EventManagement = () => {
             {isLoading ? (
               <p className="items-center">loading...</p>
             ) : switchTwo === "Published" ? (
-              <TablePublish data={eventList} columns={eventPublishedColumns} onViewDetails={handleOnViewDetails} />
+              <TablePublish data={eventList} columns={eventPublishedColumns} onViewDetails={handleOnViewDetails} onViewReviews={handleOnViewReviews} />
             ) : (
               <TableDraft
                 data={eventList}
