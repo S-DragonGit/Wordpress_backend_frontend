@@ -10,8 +10,10 @@ import { createEventApi } from "../../services/events";
 import { useNavigate } from "react-router-dom";
 import { EventFormData, Question } from "../../types/types";
 import toast from "react-hot-toast";
-
+import { createZoomLinkApi } from "../../services/events";
 import { Pencil, Trash2, Plus, X, Check } from "lucide-react";
+
+
 const usAddresses = [
   "123 Main St, New York, NY 10001",
   "456 Oak Ave, Los Angeles, CA 90001",
@@ -259,6 +261,40 @@ const CreateEvent: React.FC = () => {
       ...prev,
       event_repeat_on: newRepeatOn.join(","),
     }));
+  };
+
+  useEffect(() => {
+    if(formData.event_is_virtual === true) {
+      handleZoomLink();
+    }
+  }, [formData.event_is_virtual])
+
+  const createZoomLink = useMutation({
+    mutationFn: async (data: any) => createZoomLinkApi(token, data),
+    onSuccess: (res: any) => {
+      const link = res.data.data.response.start_url;
+      setFormData((prev) => ({
+        ...prev,
+        event_meeting_link: link,
+      }));
+    },
+    onError: (error: any) => {
+      console.error("Submission failed", error);
+    },
+  });
+
+  const handleZoomLink = async () => {
+    try {
+        const data = {
+          "user_id" : id,
+          "email" : "adnaj@gmail.com",
+          "first_name" : "Rolesh",
+          "last_name" : "A"
+        }
+        await createZoomLink.mutateAsync(data);
+    } catch (error) {
+      console.error("Submission error:", error);
+    }
   };
 
   const handleCategoryChange = (category: string, checked: boolean) => {
@@ -512,7 +548,7 @@ const CreateEvent: React.FC = () => {
               </label>
               <div className="flex justify-between">
                 <input
-                  type="date"
+                  type="time"
                   id="event_start_date"
                   name="event_start_date"
                   value={formData.event_start_date ?? ""}
@@ -530,7 +566,7 @@ const CreateEvent: React.FC = () => {
                 />
                 <span className="p-3">to</span>
                 <input
-                  type="date"
+                  type="time"
                   id="event_end_date"
                   name="event_end_date"
                   value={formData.event_end_date ?? ""}

@@ -103,6 +103,7 @@ const EventManagement = () => {
     navigate(`/eventManagement/reviews/${event.ID}`);
   };
 
+
   return (
     <div className="flex flex-col items-center w-full gap-5">
       <div className="flex items-center gap-4 justify-between w-full">
