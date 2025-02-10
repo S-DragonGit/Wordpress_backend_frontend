@@ -1,7 +1,7 @@
 import type React from "react";
 
 interface RecurringComponentProps {
-  isPublished : boolean;
+  isPublished: boolean;
   isRecurring: boolean;
   setIsRecurring: (value: boolean) => void;
   repeatEvery: string;
@@ -46,13 +46,13 @@ const RecurringComponent: React.FC<RecurringComponentProps> = ({
         <span className="text-sm font-medium">Recurring?</span>
       </div>
       <div
-        className={`bg-primary-light2 w-full rounded-b-md transition-all duration-200 ease-in-out overflow-hidden ${
+        className={`bg-primary-light2 w-lg-full  rounded-b-md transition-all duration-200 ease-in-out overflow-hidden ${
           isRecurring && "px-4"
         }`}
       >
         {isRecurring && (
           <>
-            <div className="flex items-center gap-10 w-full p-5">
+            <div className="flex flex-col items-center gap-10 w-full p-5 md:flex-row">
               <div>
                 <div className="flex items-center gap-1 mb-4">
                   <span className="text-sm">Repeat every:</span>

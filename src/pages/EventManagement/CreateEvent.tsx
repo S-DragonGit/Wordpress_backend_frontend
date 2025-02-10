@@ -765,7 +765,7 @@ const CreateEvent: React.FC = () => {
               <h5 className="font-semibold text-lg mb-4 text-center">
                 Meeting Tags
               </h5>
-              <div className="w-5/6 flex flex-col items-center p-2 bg-primary-light rounded-lg m-auto">
+              <div className=" flex flex-col items-center p-2 bg-primary-light rounded-lg m-auto">
                 <div className="w-full flex justify-center items-center p-2 border-b-[1px] pb-0">
                   <div className="flex w-1/2 justify-center">
                     <input
