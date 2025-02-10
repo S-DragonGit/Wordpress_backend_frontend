@@ -12,8 +12,7 @@ import { EventFormData, Question, EventStatus } from "../../types/types";
 import { EventState, selectCurrentEvent } from "../../app/redux/eventSlice";
 import toast from "react-hot-toast";
 import { Pencil, Trash2, Plus, X, Check } from "lucide-react";
-// import { getEventById } from "../../services/events"
-// import { useDispatch } from "react-redux";
+import { createZoomLinkApi } from "../../services/events";
 
 const usAddresses = [
   "123 Main St, New York, NY 10001",
@@ -495,6 +494,40 @@ const EventModal: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+      if (formData.event_is_virtual === true) {
+        handleZoomLink();
+      }
+    }, [formData.event_is_virtual]);
+  
+    const createZoomLink = useMutation({
+      mutationFn: async (data: any) => createZoomLinkApi(token, data),
+      onSuccess: (res: any) => {
+        const link = res.data.data.response.start_url;
+        setFormData((prev) => ({
+          ...prev,
+          event_meeting_link: link,
+        }));
+      },
+      onError: (error: any) => {
+        console.error("Submission failed", error);
+      },
+    });
+  
+    const handleZoomLink = async () => {
+      try {
+        const data = {
+          user_id: id,
+          email: "adnaj@gmail.com",
+          first_name: "Rolesh",
+          last_name: "A",
+        };
+        await createZoomLink.mutateAsync(data);
+      } catch (error) {
+        console.error("Submission error:", error);
+      }
+    };
+
   const backSubmit = () => {
     navigate("/eventManagement");
   };
@@ -511,7 +544,7 @@ const EventModal: React.FC = () => {
           <div className="flex flex-col gap-5">
             <div className="flex gap-4 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>*Event Title
+                <span className="text-red-500"></span>*Title
               </label>
               <input
                 type="text"
@@ -540,7 +573,7 @@ const EventModal: React.FC = () => {
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>*Event Date
+                <span className="text-red-500"></span>*Date
               </label>
               <input
                 type="date"
@@ -556,7 +589,7 @@ const EventModal: React.FC = () => {
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>*Event Time
+                <span className="text-red-500"></span>*Time
               </label>
               <div className="flex justify-between">
                 <input

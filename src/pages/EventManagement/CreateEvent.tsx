@@ -456,7 +456,7 @@ const CreateEvent: React.FC = () => {
           <div className="flex flex-col gap-5">
             <div className="flex gap-4 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>*Event Title
+                <span className="text-red-500"></span>*Title
               </label>
               <input
                 type="text"
@@ -485,7 +485,7 @@ const CreateEvent: React.FC = () => {
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>*Event Date
+                <span className="text-red-500"></span>*Date
               </label>
               <input
                 type="date"
@@ -501,7 +501,7 @@ const CreateEvent: React.FC = () => {
             </div>
             <div className="flex gap-15 justify-between">
               <label className="text-sm mt-2">
-                <span className="text-red-500"></span>*Event Time
+                <span className="text-red-500"></span>*Time
               </label>
               <div className="flex justify-between">
                 <input
