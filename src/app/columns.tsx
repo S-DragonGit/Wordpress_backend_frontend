@@ -24,7 +24,7 @@ export const eventPublishedColumns = [
     },
     {
         header: "Event Category",
-        accessor: "categories",
+        accessor: "event_categories",
     },
     {
         header: "Event Date",

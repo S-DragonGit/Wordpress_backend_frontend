@@ -30,6 +30,16 @@ const NotificationModal = () => {
   );
   const [notificationTitle, setNotificationTitle] = useState("");
   const [notificationDesc, setNotificationDesc] = useState("");
+  const [isPublished, setIsPublished] = useState(false);
+
+  useEffect(() => {
+    if (
+      notification?.notification_status === ("sent" as string) ||
+      notification?.notification_status === ("scheduled" as string)
+    ) {
+      setIsPublished(true);
+    }
+  }, [notification]);
 
   const defaultFormData: NotificationFormData = {
     user_id: 0,
@@ -427,6 +437,10 @@ const NotificationModal = () => {
     }
   };
 
+  const handleback = () => {
+    navigate('/notifications');
+  }
+
   return (
     <div className="grid gap-5 smd:grid-cols-2 grid-cols-1 smd:mt-10 smd:ml-10 position-absolute">
       <div className="flex flex-col gap-5 p-4 max-w-2xl">
@@ -439,6 +453,7 @@ const NotificationModal = () => {
             <div className="flex items-center gap-2">
               <input
                 type="radio"
+                disabled={isPublished}
                 id="notification_send_to_all_users"
                 name="notification_send_to_users" // Same name for both radio buttons
                 value="all"
@@ -456,6 +471,7 @@ const NotificationModal = () => {
             <div className="flex items-center gap-2">
               <input
                 type="radio"
+                disabled={isPublished}
                 id="notification_send_not_to_all_users"
                 name="notification_send_to_users" // Same name for both radio buttons
                 value="disabled"
@@ -477,6 +493,7 @@ const NotificationModal = () => {
         <div className="flex items-center gap-2">
           <span className="text-sm">Event(s)/Attendees:</span>
           <select
+            disabled={isPublished}
             className="border border-gray-border w-full p-2 rounded-sm"
             id="notification_event_attendees"
             name="notification_event_attendees"
@@ -492,7 +509,7 @@ const NotificationModal = () => {
         {/* Tags Section */}
         <div className="flex gap-2 align-center">
           <h5>Tags</h5>
-          <input type="checkbox" className="w-4 h-4" />
+          <input type="checkbox" disabled={isPublished} className="w-4 h-4" />
 
           <div>
             <div className="flex items-center gap-2 ">
@@ -509,6 +526,7 @@ const NotificationModal = () => {
           </label>
           <input
             type="text"
+            disabled={isPublished}
             id="notification_title"
             name="notification_title"
             value={formData.notification_title}
@@ -526,6 +544,7 @@ const NotificationModal = () => {
           <textarea
             id="notification_description"
             name="notification_description"
+            disabled={isPublished}
             value={formData.notification_description}
             onChange={handleInputChange}
             className={`border w-[300px] p-2 rounded ${
@@ -540,6 +559,7 @@ const NotificationModal = () => {
           <input
             id="notification_link"
             name="notification_link"
+            disabled={isPublished}
             value={formData.notification_link}
             onChange={handleInputChange}
             type="text"
@@ -552,6 +572,7 @@ const NotificationModal = () => {
           <label className="text-sm">Image</label>
           <div className="flex gap-4 items-center">
             <button
+              disabled={isPublished}
               className="bg-primary p-1 rounded-md text-white font-semibold px-3"
               onClick={handleFileButtonClick}
             >
@@ -560,6 +581,7 @@ const NotificationModal = () => {
             <span>{fileName}</span>
             <input
               type="file"
+              disabled={isPublished}
               ref={fileInputRef}
               onChange={handleFileChange}
               className="hidden"
@@ -641,6 +663,7 @@ const NotificationModal = () => {
             <label className="text-sm w-70">Schedule Date & Time</label>
 
             <input
+              disabled={isPublished}
               type="datetime-local"
               min={new Date().toISOString().slice(0, 16)}
               value={scheduleDateTime}
@@ -653,6 +676,7 @@ const NotificationModal = () => {
           <>
             <div className="relative mt-10">
               <input
+                disabled={isPublished}
                 type="text"
                 className="border border-gray-border rounded-lg py-2 px-4 pl-10 text-sm w-full"
                 placeholder="Search for an event"
@@ -668,6 +692,7 @@ const NotificationModal = () => {
                 onChange={handleInputChange}
                 className="border border-gray-border p-2 rounded "
                 placeholder="5.65"
+                disabled={isPublished}
               />
               <select
                 id="notification_geo_category.dist_unit"
@@ -675,6 +700,7 @@ const NotificationModal = () => {
                 value={formData.notification_geo_category?.dist_unit ?? "miles"}
                 className="border border-gray-border p-2 rounded "
                 onChange={handleInputChange}
+                disabled={isPublished}
               >
                 <option value="mile">mile</option>
                 <option value="km">km</option>
@@ -682,7 +708,8 @@ const NotificationModal = () => {
               <button
                 name="saveButton"
                 onClick={handleSubmit}
-                className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary mx-5 mt-10"
+                disabled={isPublished}
+                className={`p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary mx-5 mt-10 ${isPublished ? 'hidden' : ''}`}
               >
                 Save
               </button>
@@ -709,6 +736,7 @@ const NotificationModal = () => {
                     <label className="flex items-center gap-2">
                       <input
                         type="radio"
+                        disabled={isPublished}
                         name="filterByLocation"
                         value="inAreaAtSend"
                         className="w-4 h-4 text-orange-500 focus:ring-orange-500"
@@ -718,6 +746,7 @@ const NotificationModal = () => {
                     <label className="flex items-center gap-2">
                       <input
                         type="radio"
+                        disabled={isPublished}
                         name="filterByLocation"
                         value="enteringAreaAfterSend"
                         className="w-4 h-4 text-orange-500 focus:ring-orange-500"
@@ -734,6 +763,7 @@ const NotificationModal = () => {
                   </label>
                   <input
                     type="date"
+                    disabled={isPublished}
                     min={new Date().toISOString().split("T")[0]}
                     value={geoExpirationDate}
                     onChange={handleDateTime}
@@ -747,6 +777,7 @@ const NotificationModal = () => {
         <div className="flex items-center mt-8 justify-end">
           {typeNotification !== 2 && (
             <button
+              disabled={isPublished}
               name="saveButton"
               onClick={handleSubmit}
               className="p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary mx-5 mt-10"
@@ -754,15 +785,28 @@ const NotificationModal = () => {
               Save
             </button>
           )}
-          <button
-            name="sendButton"
-            onClick={handleSubmit}
-            className={`p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary ${
-              typeNotification === 3 ? "m-auto" : "mx-5"
-            } mt-10`}
-          >
-            Send
-          </button>
+          {isPublished ? (
+            <button
+              name="sendButton"
+              onClick={handleback}
+              className={`p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary ${
+                typeNotification === 3 ? "m-auto" : "mx-5"
+              } mt-10`}
+            >
+              Back
+            </button>
+          ) : (
+            <button
+              disabled={isPublished}
+              name="sendButton"
+              onClick={handleSubmit}
+              className={`p-2 px-4 rounded-md bg-primary-light border text-sm border-primary text-primary ${
+                typeNotification === 3 ? "m-auto" : "mx-5"
+              } mt-10`}
+            >
+              Send
+            </button>
+          )}
         </div>
       </div>
     </div>
