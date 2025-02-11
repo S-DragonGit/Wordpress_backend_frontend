@@ -333,6 +333,7 @@ const CreateNotification = () => {
           ...updatedData,
           notification_geo_category: null,
           notification_geo_fence_expiration_date: null,
+          notification_status: 'scheduled'
         };
         break;
 
