@@ -333,7 +333,7 @@ const CreateNotification = () => {
           ...updatedData,
           notification_geo_category: null,
           notification_geo_fence_expiration_date: null,
-          notification_status: 'scheduled'
+          notification_status: "scheduled",
         };
         break;
 
@@ -359,6 +359,11 @@ const CreateNotification = () => {
         console.log(formData);
       } else {
         setIsLoading(true);
+        if (updatedData.notification_how_to_send === "1")
+          updatedData = {
+            ...updatedData,
+            notification_status: "scheduled",
+          };
         await createNotificationMutation.mutate(updatedData);
       }
     } catch (error) {
