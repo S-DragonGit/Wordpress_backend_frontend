@@ -114,7 +114,6 @@ const CreateEvent: React.FC = () => {
 
 
   const handleLocationSelected = async (location: Location) => {
-    console.log(filteredAddresses)
     setSelectedLocation(location)
     setMapLoading(true)
     try {
@@ -670,14 +669,14 @@ const CreateEvent: React.FC = () => {
                       virtual?
                     </label>
                     <div className="flex items-center w-full gap-4">
-                      <div className="flex items-center w-1/2 justify-end lg:justify-start  justify gap-2">
+                      <div className="flex items-center w-1/2 justify-start gap-2">
                         <input
                           type="radio"
                           id="event_is_virtual"
                           name="event_is_virtual" // Same name for both radio buttons
                           checked={selected === "yes"}
                           // checked={formData.event_is_virtual}
-                          onChange={() => {
+                          onChange={(e) => {
                             
                             setSelected("yes");
                             // setFormData((prev) => ({
@@ -696,7 +695,7 @@ const CreateEvent: React.FC = () => {
                           name="event_is_virtual" // Same name for both radio buttons
                           value="disabled"
                           checked={selected === "no"}
-                          onChange={() => {
+                          onChange={(e) => {
                             setSelected("no");
                             // setFormData((prev) => ({
                             //   ...prev,

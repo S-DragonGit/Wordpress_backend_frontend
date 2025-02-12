@@ -74,12 +74,11 @@ const EventModal: React.FC = () => {
   const [isMapLoading, setMapLoading] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [value, setValue] = useState("");
-  // const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredAddresses, setFilteredAddresses] = useState(usAddresses);
 
   const handleLocationSelected = async (location: Location) => {
       setSelectedLocation(location)
-      console.log(filteredAddresses)
       setMapLoading(true)
       try {
         const response = await fetch(
@@ -735,7 +734,7 @@ const EventModal: React.FC = () => {
                           // checked={!formData.event_is_virtual}
                           checked={selected === false}
                           disabled={isPublished}
-                          onChange={() => {
+                          onChange={(e) => {
                             setSelected(false);
                             // setFormData((prev) => ({
                             //   ...prev,

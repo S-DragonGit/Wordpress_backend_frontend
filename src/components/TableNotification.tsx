@@ -22,6 +22,12 @@ const TableNotification: React.FC<TableOneProps> = ({
       <table className="table-auto mt-5 2lg:w-full w-[1200px]">
         <thead>
           <tr>
+            <th
+                // key={index}
+                className="px-4 py-3 text-center text-sm bg-primary-light2 font-medium"
+              >
+                <input type="checkbox" />
+              </th>
             {columns.map((col, index) => (
               <th
                 key={index}
@@ -41,6 +47,9 @@ const TableNotification: React.FC<TableOneProps> = ({
               key={rowIndex}
               className="border-b border-gray-border hover:bg-gray-100"
             >
+              <td className="px-4 py-3 text-center">
+                <input type="checkbox" />
+              </td>
               {columns.map((col, colIndex) => (
                 <td key={colIndex} className="px-4 py-3 text-center">
                   {col.Cell
