@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 interface Column {
   header: string;
@@ -13,6 +13,7 @@ interface TablePublishProps {
   onViewReviews: (row: any) => void;
 }
 
+
 const TablePublish: React.FC<TablePublishProps> = ({
   columns,
   data,
@@ -21,11 +22,34 @@ const TablePublish: React.FC<TablePublishProps> = ({
 }) => {
   const publishPosts = data?.filter((row) => row.post_status === "publish");
 
+  // const [parentChecked, setParentChecked] = useState(false);
+  // const [items, setItems] = useState<any>([
+  // ]);
+
+  // const handleParentChange = (checked: boolean) => {
+  //   setParentChecked(checked);
+  //   setItems(items.map(item => ({ ...item, checked })));
+  // };
+
+  // const handleItemChange = (itemId: string, checked: boolean) => {
+  //   const updatedItems = items.map(item =>
+  //     item.id === itemId ? { ...item, checked } : item
+  //   );
+  //   setItems(updatedItems);
+  //   setParentChecked(updatedItems.every(item => item.checked));
+  // };
+
   return (
     <div className="overflow-x-auto">
       <table className="table-auto mt-5 2lg:w-full w-[1200px]">
         <thead>
           <tr>
+              <th
+                // key={index}
+                className="px-4 py-3 text-center text-sm bg-primary-light2 font-medium"
+              >
+                <input type="checkbox" />
+              </th>
             {columns.map((col, index) => (
               <th
                 key={index}
@@ -42,6 +66,9 @@ const TablePublish: React.FC<TablePublishProps> = ({
               key={rowIndex}
               className="border-b border-gray-border hover:bg-gray-100"
             >
+              <td className="px-4 py-3 text-center">
+                <input type="checkbox" />
+              </td>
               {columns.map((col, colIndex) => (
                 <td key={colIndex} className="px-4 py-3 text-center">
                   {/* {col.Cell

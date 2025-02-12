@@ -16,6 +16,8 @@ import TablePublish from "../../components/TablePublish";
 import { setEvents, setCurrentEvent } from "../../app/redux/eventSlice";
 import { useNavigate } from "react-router-dom";
 import LoadingScreen from "../../components/LoadingScreen";
+// import { CheckboxList } from './components/CheckboxList';
+// import { ListItem } from './types';
 
 const EventManagement = () => {
   const switchList = ["Published", "Drafts"];
@@ -72,6 +74,22 @@ const EventManagement = () => {
       console.error("Submission error for updating", error);
     }
   };
+
+  // const [parentChecked, setParentChecked] = useState(false);
+  // const [items, setItems] = useState<any>([]);
+
+  // const handleParentChange = (checked: boolean) => {
+  //   setParentChecked(checked);
+  //   setItems(items.map(item => ({ ...item, checked })));
+  // };
+
+  // const handleItemChange = (itemId: string, checked: boolean) => {
+  //   const updatedItems = items.map(item =>
+  //     item.id === itemId ? { ...item, checked } : item
+  //   );
+  //   setItems(updatedItems);
+  //   setParentChecked(updatedItems.every(item => item.checked));
+  // };
 
   const navigate = useNavigate();
   const getEvent = useMutation({
