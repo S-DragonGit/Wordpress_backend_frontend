@@ -74,10 +74,10 @@ const EventModal: React.FC = () => {
   const [isMapLoading, setMapLoading] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [value, setValue] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredAddresses, setFilteredAddresses] = useState(usAddresses);
 
   const handleLocationSelected = async (location: Location) => {
+    console.log(filteredAddresses)
       setSelectedLocation(location)
       setMapLoading(true)
       try {
@@ -734,7 +734,7 @@ const EventModal: React.FC = () => {
                           // checked={!formData.event_is_virtual}
                           checked={selected === false}
                           disabled={isPublished}
-                          onChange={(e) => {
+                          onChange={() => {
                             setSelected(false);
                             // setFormData((prev) => ({
                             //   ...prev,
