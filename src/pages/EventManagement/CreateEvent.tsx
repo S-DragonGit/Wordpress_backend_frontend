@@ -64,10 +64,125 @@ export const usAddresses = [
   "369 Pinegrove Rd, Tulsa, OK 74101",
 ];
 
+// import { useState, useEffect, useRef } from "react"
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet"
+import { LatLngExpression } from 'leaflet';
+const center: LatLngExpression = [51.505, -0.09];
+import "leaflet/dist/leaflet.css"
+// import L from "leaflet"
+
+// delete L.Icon.Default.prototype._getIconUrl
+// L.Icon.Default.mergeOptions({
+//   iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-icon-2x.png",
+//   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-icon.png",
+//   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png",
+// })
+
+interface Location {
+  lat: number
+  lng: number
+}
+
+interface Suggestion {
+  place_id: number
+  display_name: string
+  lat: string
+  lon: string
+}
+
+function MapEvents({ onLocationSelected }: { onLocationSelected: (location: Location) => void }) {
+  useMapEvents({
+    click(e) {
+      onLocationSelected(e.latlng)
+    },
+  })
+  return null
+}
+
+
+
 const CreateEvent: React.FC = () => {
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
+  const [placeName, setPlaceName] = useState("")
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isMapLoading, setMapLoading] = useState(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [value, setValue] = useState("");
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  // const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredAddresses, setFilteredAddresses] = useState(usAddresses);
+
+
+  const handleLocationSelected = async (location: Location) => {
+    console.log(filteredAddresses)
+    setSelectedLocation(location)
+    setMapLoading(true)
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.lat}&lon=${location.lng}&zoom=18&addressdetails=1`,
+      )
+      const data = await response.json()
+
+      const address = data.address
+      const formattedAddress = [
+        address.road,
+        address.city || address.town || address.village,
+        address.postcode,
+        address.country,
+      ]
+        .filter(Boolean)
+        .join(", ")
+
+      setPlaceName(formattedAddress || "Unknown location")
+      setSuggestions([])
+    } catch (error) {
+      console.error("Error fetching place name:", error)
+      setPlaceName("Error fetching place name")
+    }
+    setMapLoading(false)
+  }
+
+  const handleMapInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setValue(e.target.value);
+    setPlaceName(value)
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+
+    timeoutRef.current = setTimeout(async () => {
+      if (value.length > 2) {
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}`,
+          )
+          const data = await response.json()
+          setSuggestions(data)
+        } catch (error) {
+          console.error("Error fetching suggestions:", error)
+        }
+      } else {
+        setSuggestions([])
+      }
+    }, 300)
+  }
+
+  const handleSuggestionClick = (suggestion: Suggestion) => {
+    // setValue(suggestion);
+    // alert(suggestion);
+    setPlaceName(suggestion.display_name)
+    setSelectedLocation({ lat: Number.parseFloat(suggestion.lat), lng: Number.parseFloat(suggestion.lon) })
+    setSuggestions([])
+  }
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (value) {
@@ -183,7 +298,8 @@ const CreateEvent: React.FC = () => {
   const [eventDate, setEventDate] = useState("");
   const [eventStartTime, setEventStartTime] = useState("");
   const [eventEndTime, setEventEndTime] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [selected, setSelected] = useState("");
+  // const [isLoading, setIsLoading] = useState(false);
 
   const handleFileButtonClick = () => {
     if (fileInputRef.current) {
@@ -223,16 +339,16 @@ const CreateEvent: React.FC = () => {
   };
 
   useEffect(() => {
-    if (formData.event_is_virtual === true) {
-      setIsLoading(true)
+    // if (formData.event_is_virtual === true) {
+      // setMapLoading(true)
       handleZoomLink();
-    }
+    // }
   }, [formData.event_is_virtual]);
 
   const createZoomLink = useMutation({
     mutationFn: async (data: any) => createZoomLinkApi(token, data),
     onSuccess: (res: any) => {
-      setIsLoading(false)
+      setMapLoading(false)
       const link = res.data.data.response.start_url;
       setFormData((prev) => ({
         ...prev,
@@ -240,7 +356,7 @@ const CreateEvent: React.FC = () => {
       }));
     },
     onError: (error: any) => {
-      setIsLoading(false)
+      setMapLoading(false)
       console.error("Submission failed", error);
     },
   });
@@ -446,6 +562,7 @@ const CreateEvent: React.FC = () => {
           ...formData,
           event_status: status,
           event_questions: questions,
+          event_location: placeName,
         });
         navigate("/eventManagement");
       }
@@ -461,433 +578,513 @@ const CreateEvent: React.FC = () => {
       ) : (
         <div>
           <h2 className="pl-[30px] pt-[30px] font-bold">Create New Event</h2>
-          <div className="flex 2xl:flex-row flex-col justify-between items-center w-full m-auto gap-2">
-            <div className="smd:grid gap-20 gap-sm-5 grid-cols-2 mt-10 px-6 w-xl-2/3 w-sm-full">
-              <div className="flex flex-col gap-5">
-                <div className="flex gap-4 justify-between">
-                  <label className="text-sm mt-2">
-                    <span className="text-red-500"></span>*Title
-                  </label>
-                  <input
-                    type="text"
-                    id="event_title"
-                    name="event_title"
-                    value={formData.event_title}
-                    onChange={handleInputChange}
-                    required
-                    className={`border w-[300px] p-2 rounded ${
-                      eventTitle ? "border-red-600" : "border-gray-border"
-                    }`}
-                  />
-                </div>
-                <div className="flex gap-15 justify-between">
-                  <label className="text-sm mt-2">
-                    <span className="text-red-500"></span>Description
-                  </label>
-                  <textarea
-                    id="event_description"
-                    name="event_description"
-                    value={formData.event_description}
-                    onChange={handleInputChange}
-                    required
-                    className={`border w-[300px] p-2 rounded border-gray-border`}
-                  />
-                </div>
-                <div className="flex gap-15 justify-between">
-                  <label className="text-sm mt-2">
-                    <span className="text-red-500"></span>*Date
-                  </label>
-                  <input
-                    type="date"
-                    id="event_date"
-                    name="event_date"
-                    value={formData.event_date ?? ""}
-                    onChange={handleInputChange}
-                    required
-                    className={`border w-[300px] p-2 rounded ${
-                      eventDate ? "border-red-600" : "border-gray-border"
-                    }`}
-                  />
-                </div>
-                <div className="flex gap-15 justify-between">
-                  <label className="text-sm mt-2">
-                    <span className="text-red-500"></span>*Time
-                  </label>
-                  <div className="flex justify-between">
+          {/* <div className="2xl:flex-row flex-col justify-between items-center w-full m-auto gap-2"> */}
+          <div className="grid grid-cols-3 w-full m-auto gap-2">
+            <div className="col-span-3 2xl:col-span-2">
+              <div className="smd:grid gap-20 gap-sm-5 grid-cols-2 mt-10 px-6 w-xl-2/3 w-sm-full">
+                <div className="flex flex-col gap-5">
+                  <div className="flex gap-4 justify-between">
+                    <label className="text-sm mt-2">
+                      <span className="text-red-500" style={{color: "red"}}>* </span>Title
+                    </label>
                     <input
-                      type="time"
-                      id="event_start_time"
-                      name="event_start_time"
-                      value={formData.event_start_time ?? ""}
+                      type="text"
+                      id="event_title"
+                      name="event_title"
+                      value={formData.event_title}
+                      onChange={handleInputChange}
+                      required
+                      className={`border w-[300px] p-2 rounded ${
+                        eventTitle ? "border-red-600" : "border-gray-border"
+                      }`}
+                    />
+                  </div>
+                  <div className="flex gap-15 justify-between">
+                    <label className="text-sm mt-2">
+                      <span className="text-red-500"></span>Description
+                    </label>
+                    <textarea
+                      id="event_description"
+                      name="event_description"
+                      value={formData.event_description}
+                      onChange={handleInputChange}
+                      required
+                      className={`border w-[300px] p-2 rounded border-gray-border`}
+                    />
+                  </div>
+                  <div className="flex gap-15 justify-between">
+                    <label className="text-sm mt-2">
+                    <span className="text-red-500" style={{color: "red"}}>* </span>Date
+                    </label>
+                    <input
+                      type="date"
+                      id="event_date"
+                      name="event_date"
+                      value={formData.event_date ?? ""}
+                      onChange={handleInputChange}
+                      required
+                      className={`border w-[300px] p-2 rounded ${
+                        eventDate ? "border-red-600" : "border-gray-border"
+                      }`}
+                    />
+                  </div>
+                  <div className="flex gap-15 justify-between">
+                    <label className="text-sm mt-2">
+                    <span className="text-red-500" style={{color: "red"}}>* </span>Time
+                    </label>
+                    <div className="flex justify-between">
+                      <input
+                        type="time"
+                        id="event_start_time"
+                        name="event_start_time"
+                        value={formData.event_start_time ?? ""}
+                        onChange={(e) => {
+                          const { name, value } = e.target;
+                          setFormData((prev) => ({
+                            ...prev,
+                            [name]: value,
+                          }));
+                        }}
+                        required
+                        className={`border p-2 rounded ${
+                          eventStartTime ? "border-red-600" : "border-gray-border"
+                        } w-[130px]`}
+                      />
+                      <span className="p-3">to</span>
+                      <input
+                        type="time"
+                        id="event_end_time"
+                        name="event_end_time"
+                        value={formData.event_end_time ?? ""}
+                        onChange={handleInputChange}
+                        required
+                        className={`border p-2 rounded ${
+                          eventEndTime ? "border-red-600" : "border-gray-border"
+                        } w-[130px]`}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-15 justify-between">
+                    <label className="text-sm mt-2 w-1/3">
+                      <span className="text-red-500"></span>Is this meeting
+                      virtual?
+                    </label>
+                    <div className="flex items-center w-full gap-4">
+                      <div className="flex items-center w-1/2 justify-end lg:justify-start  justify gap-2">
+                        <input
+                          type="radio"
+                          id="event_is_virtual"
+                          name="event_is_virtual" // Same name for both radio buttons
+                          checked={selected === "yes"}
+                          // checked={formData.event_is_virtual}
+                          onChange={() => {
+                            
+                            setSelected("yes");
+                            // setFormData((prev) => ({
+                            //   ...prev,
+                            //   event_is_virtual: e.target.checked === true,
+                            // }));
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <span>Yes</span>
+                      </div>
+                      <div className="flex items-center w-1/2 justify-start gap-2">
+                        <input
+                          type="radio"
+                          id="event_is_virtual"
+                          name="event_is_virtual" // Same name for both radio buttons
+                          value="disabled"
+                          checked={selected === "no"}
+                          onChange={() => {
+                            setSelected("no");
+                            // setFormData((prev) => ({
+                            //   ...prev,
+                            //   event_is_virtual: e.target.checked === false,
+                            // }));
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <span>No</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-15 justify-between">
+                    <label className="text-sm mt-2">
+                      <span className="text-red-500"></span>Meeting Link
+                    </label>
+                    <input
+                      type="text"
+                      id="event_meeting_link"
+                      name="event_meeting_link"
+                      readOnly
+                      value={selected === "yes" ? formData.event_meeting_link : ""}
+                      disabled={!formData.event_is_virtual}
+                      onChange={handleInputChange}
+                      required
+                      className={`border w-[300px] border-gray-border p-2 rounded ${
+                        formData.event_is_virtual
+                          ? ""
+                          : "disabled:cursor-not-allowed"
+                      }`}
+                    />
+                  </div>
+                  {/* <div className="flex gap-15 justify-between">
+                    <label className="text-sm mt-2">
+                      <span className="text-red-500"></span>Event Location
+                    </label>
+                    <div style={{ position: "relative", width: "300px" }}>
+                      <input
+                        type="text"
+                        id="event_location"
+                        name="event_location"
+                        value={value}
+                        onChange={(e) => {
+                          setValue(e.target.value);
+                        }}
+                        onFocus={() => {
+                          setShowSuggestions(true);
+                        }}
+                        onBlur={() =>
+                          setTimeout(() => setShowSuggestions(false), 200)
+                        }
+                        required
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          border: "1px solid #ccc",
+                          borderRadius: "4px",
+                        }}
+                        placeholder="Enter event location"
+                      />
+                      {showSuggestions && (
+                        <ul
+                          style={{
+                            position: "absolute",
+                            top: "100%",
+                            left: 0,
+                            right: 0,
+                            maxHeight: "200px",
+                            overflowY: "auto",
+                            border: "1px solid #ccc",
+                            borderTop: "none",
+                            borderRadius: "0 0 4px 4px",
+                            backgroundColor: "white",
+                            listStyle: "none",
+                            margin: 0,
+                            padding: 0,
+                            zIndex: 1,
+                          }}
+                        >
+                          {filteredAddresses.map((address) => (
+                            <li
+                              key={address}
+                              onClick={() => {
+                                setValue(address);
+                                setShowSuggestions(false);
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  event_location: address,
+                                }));
+                              }}
+                              style={{
+                                padding: "8px",
+                                cursor: "pointer",
+                              }}
+                              onMouseDown={(e) => e.preventDefault()}
+                            >
+                              {address}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div> */}
+                </div>
+                <div className="flex flex-col gap-5 mt-4 lg:mt-0">
+                  <div className="flex gap-15 justify-between">
+                    <label className="text-sm mt-2">
+                      <span className="text-red-500"></span>Member(s)
+                    </label>
+                    <input
+                      type="text"
+                      id="event_members"
+                      name="event_members"
+                      value={formData.event_members.join(",")}
                       onChange={(e) => {
-                        const { name, value } = e.target;
+                        // Convert back to number array when handling changes
+                        const numbers = e.target.value
+                          .split(",")
+                          .map((num) => Number(num.trim()));
                         setFormData((prev) => ({
                           ...prev,
-                          [name]: value,
+                          event_members: numbers,
                         }));
                       }}
                       required
-                      className={`border p-2 rounded ${
-                        eventStartTime ? "border-red-600" : "border-gray-border"
-                      } w-[130px]`}
-                    />
-                    <span className="p-3">to</span>
-                    <input
-                      type="time"
-                      id="event_end_time"
-                      name="event_end_time"
-                      value={formData.event_end_time ?? ""}
-                      onChange={handleInputChange}
-                      required
-                      className={`border p-2 rounded ${
-                        eventEndTime ? "border-red-600" : "border-gray-border"
-                      } w-[130px]`}
+                      className="border w-[300px] border-gray-border p-2 rounded"
                     />
                   </div>
-                </div>
-                <div className="flex gap-15 justify-between">
-                  <label className="text-sm mt-2 w-1/3">
-                    <span className="text-red-500"></span>Is this meeting
-                    virtual?
-                  </label>
-                  <div className="flex items-center w-full gap-4">
-                    <div className="flex items-center w-1/2 justify-start gap-2">
-                      <input
-                        type="radio"
-                        id="event_is_virtual"
-                        name="event_is_virtual" // Same name for both radio buttons
-                        checked={formData.event_is_virtual}
-                        onChange={(e) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            event_is_virtual: e.target.checked === true,
-                          }));
-                        }}
-                        className="w-4 h-4"
-                      />
-                      <span>Yes</span>
+                  <div className="flex gap-15 justify-between">
+                    <label className="text-sm mt-2">
+                      <span className="text-red-500"></span>Member permmisions
+                    </label>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex item-center justify-start">
+                        <input
+                          type="checkbox"
+                          className="border border-gray-border p-2 rounded"
+                        />
+                        <label className="p-3">Modify event</label>
+                      </div>
+                      <div className="flex item-center justify-start">
+                        <input
+                          type="checkbox"
+                          className="border border-gray-border p-2 rounded"
+                        />
+                        <label className="p-3">Invite others</label>
+                      </div>
+                      <div className="flex item-center justify-start">
+                        <input
+                          type="checkbox"
+                          className="border border-gray-border p-2 rounded"
+                        />
+                        <label className="p-3">View member list</label>
+                      </div>
                     </div>
-                    <div className="flex items-center w-1/2 justify-start gap-2">
-                      <input
-                        type="radio"
-                        id="event_is_virtual"
-                        name="event_is_virtual" // Same name for both radio buttons
-                        value="disabled"
-                        checked={!formData.event_is_virtual}
-                        onChange={(e) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            event_is_virtual: e.target.checked === false,
-                          }));
-                        }}
-                        className="w-4 h-4"
-                      />
-                      <span>No</span>
+                  </div>
+                  <div className="flex">
+                    <label className="text-sm w-1/2">Cover Image</label>
+                    <div className="flex flex-col gap-2">
+                      <div className="gap-4 items-center">
+                        <button
+                          className="bg-primary p-1 rounded-md text-white font-semibold px-3"
+                          onClick={handleFileButtonClick}
+                        >
+                          Choose file +
+                        </button>
+                        <p>{fileName}</p>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                        {imagePreview && (
+                          <div className="image-preview p-5">
+                            <img
+                              src={imagePreview}
+                              alt="Preview"
+                              style={{ maxWidth: "200px", maxHeight: "200px" }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-15 justify-between">
-                  <label className="text-sm mt-2">
-                    <span className="text-red-500"></span>Meeting Link
-                  </label>
-                  <input
-                    type="text"
-                    id="event_meeting_link"
-                    name="event_meeting_link"
-                    readOnly
-                    value={formData.event_meeting_link}
-                    disabled={!formData.event_is_virtual}
-                    onChange={handleInputChange}
-                    required
-                    className={`border w-[300px] border-gray-border p-2 rounded ${
-                      formData.event_is_virtual
-                        ? ""
-                        : "disabled:cursor-not-allowed"
-                    }`}
-                  />
-                </div>
-                <div className="flex gap-15 justify-between">
-                  <label className="text-sm mt-2">
-                    <span className="text-red-500"></span>Event Location
-                  </label>
-                  <div style={{ position: "relative", width: "300px" }}>
+              </div>
+              <div className="pt-6 mx-6 ">
+                  <div className="input-container mb-6  flex justify-start items-center" style={{ marginTop: "20px", position: "relative" }}>
+                    <label htmlFor="location-input" className="text-sm mt-2 w-1/6">Event Location:</label>
                     <input
+                      // id="location-input"
                       type="text"
                       id="event_location"
                       name="event_location"
-                      value={value}
-                      onChange={(e) => {
-                        setValue(e.target.value);
-                      }}
-                      onFocus={() => {
-                        setShowSuggestions(true);
-                      }}
-                      onBlur={() =>
-                        setTimeout(() => setShowSuggestions(false), 200)
-                      }
-                      required
-                      style={{
-                        width: "100%",
-                        padding: "8px",
-                        border: "1px solid #ccc",
-                        borderRadius: "4px",
-                      }}
-                      placeholder="Enter event location"
+                      // value={value}
+                      // onChange={(e) => {
+                      //   setValue(e.target.value);
+                      // }}
+                      value={isMapLoading ? "Loading...": placeName}
+                      onChange={handleMapInputChange}
+                      placeholder="Type to search or click on the map"
+                      className="border w-[300px] border-gray-border p-2 rounded"
                     />
-                    {showSuggestions && (
+                    {suggestions.length > 0 && (
                       <ul
+                        className="suggestions"
                         style={{
                           position: "absolute",
                           top: "100%",
                           left: 0,
                           right: 0,
-                          maxHeight: "200px",
-                          overflowY: "auto",
+                          backgroundColor: "white",
                           border: "1px solid #ccc",
                           borderTop: "none",
-                          borderRadius: "0 0 4px 4px",
-                          backgroundColor: "white",
+                          maxHeight: "200px",
+                          overflowY: "auto",
+                          zIndex: 1000,
                           listStyle: "none",
-                          margin: 0,
                           padding: 0,
-                          zIndex: 1,
+                          margin: 0,
                         }}
                       >
-                        {filteredAddresses.map((address) => (
+                        {suggestions.map((suggestion) => (
                           <li
-                            key={address}
-                            onClick={() => {
-                              setValue(address);
-                              setShowSuggestions(false);
-                              setFormData((prev) => ({
-                                ...prev,
-                                event_location: address,
-                              }));
-                            }}
+                            key={suggestion.place_id}
+                            onClick={() => handleSuggestionClick(suggestion)}
                             style={{
-                              padding: "8px",
+                              padding: "5px",
                               cursor: "pointer",
+                              borderBottom: "1px solid #eee",
                             }}
-                            onMouseDown={(e) => e.preventDefault()}
                           >
-                            {address}
+                            {suggestion.display_name}
                           </li>
                         ))}
                       </ul>
                     )}
                   </div>
-                </div>
-              </div>
-              <div className="flex flex-col gap-5">
-                <div className="flex gap-15 justify-between">
-                  <label className="text-sm mt-2">
-                    <span className="text-red-500"></span>Member(s)
-                  </label>
-                  <input
-                    type="text"
-                    id="event_members"
-                    name="event_members"
-                    value={formData.event_members.join(",")}
-                    onChange={(e) => {
-                      // Convert back to number array when handling changes
-                      const numbers = e.target.value
-                        .split(",")
-                        .map((num) => Number(num.trim()));
-                      setFormData((prev) => ({
-                        ...prev,
-                        event_members: numbers,
-                      }));
-                    }}
-                    required
-                    className="border w-[300px] border-gray-border p-2 rounded"
-                  />
-                </div>
-                <div className="flex gap-15 justify-between">
-                  <label className="text-sm mt-2">
-                    <span className="text-red-500"></span>Member permmisions
-                  </label>
-                  <div className="flex flex-col gap-2">
-                    <div className="flex item-center justify-start">
-                      <input
-                        type="checkbox"
-                        className="border border-gray-border p-2 rounded"
-                      />
-                      <label className="p-3">Modify event</label>
-                    </div>
-                    <div className="flex item-center justify-start">
-                      <input
-                        type="checkbox"
-                        className="border border-gray-border p-2 rounded"
-                      />
-                      <label className="p-3">Invite others</label>
-                    </div>
-                    <div className="flex item-center justify-start">
-                      <input
-                        type="checkbox"
-                        className="border border-gray-border p-2 rounded"
-                      />
-                      <label className="p-3">View member list</label>
+                  <div className="map-selector">
+                    <div className="map-container" style={{ height: "400px", width: "100%" }}>
+                      <MapContainer 
+                      center={center} zoom={13}
+                      style={{ height: "100%", width: "100%" }}>
+                        <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <MapEvents onLocationSelected={handleLocationSelected} />
+                        {selectedLocation && <Marker position={[selectedLocation.lat, selectedLocation.lng]} />}
+                      </MapContainer>
                     </div>
                   </div>
                 </div>
-                <div className="flex">
-                  <label className="text-sm w-1/2">Cover Image</label>
-                  <div className="flex flex-col gap-2">
-                    <div className="gap-4 items-center">
-                      <button
-                        className="bg-primary p-1 rounded-md text-white font-semibold px-3"
-                        onClick={handleFileButtonClick}
-                      >
-                        Choose file +
-                      </button>
-                      <p>{fileName}</p>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
-                      {imagePreview && (
-                        <div className="image-preview p-5">
-                          <img
-                            src={imagePreview}
-                            alt="Preview"
-                            style={{ maxWidth: "200px", maxHeight: "200px" }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              
             </div>
-            <div className="w-lg-1/3 w-sm-full">
-              <h5 className="font-semibold text-lg mb-4 text-center">
-                Meeting Tags
-              </h5>
-              <div className=" flex flex-col items-center p-2 bg-primary-light rounded-lg m-auto">
-                <div className="w-full flex justify-center items-center p-2 border-b-[1px] pb-0">
-                  <div className="flex w-1/2 justify-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.event_featured}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          event_featured: e.target.checked === true,
-                        }));
-                      }}
-                    />
-                    <span className="p-3 font-bold text-shadow-md">
-                      Featured Event
-                    </span>
-                  </div>
-                  <div className="flex w-1/2 justify-center">
-                    <input
-                      type="checkbox"
-                      checked={formData.event_popup}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          event_popup: e.target.checked === true,
-                        }));
-                      }}
-                    />
-                    <span className="p-3 font-bold text-shadow-md">
-                      Pop Up Event
-                    </span>
-                  </div>
-                </div>
-                <div
-                  className="w-full max-h-[500px] overflow-y-auto pt-2
-    scrollbar scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100
-    hover:scrollbar-thumb-gray-500"
-                >
-                  {meetingTags.map((tag, index) => (
-                    <div
-                      key={index}
-                      className="bg-white rounded-lg shadow-sm mb-4 p-4"
-                    >
-                      <div className="flex flex-col">
-                        <label className="flex items-center gap-2 mb-3 cursor-pointer hover:bg-gray-50 p-2 rounded-md">
-                          <input
-                            type="checkbox"
-                            className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            checked={isParentChecked(tag)}
-                            ref={(input) => {
-                              if (input) {
-                                input.indeterminate =
-                                  isParentIndeterminate(tag);
-                              }
-                            }}
-                            onChange={(e) =>
-                              handleCategoryChange(
-                                tag.category,
-                                e.target.checked
-                              )
-                            }
-                            aria-label={
-                              isParentChecked(tag) ? "Uncheck all" : "Check all"
-                            }
-                          />
-                          <span className="text-sm font-medium text-gray-700">
-                            {tag.category}
-                          </span>
-                        </label>
+            
+            
 
-                        <div className="ml-6 border-l-2 border-gray-100 pl-4">
-                          <div
-                            className={
-                              index === 0
-                                ? "grid grid-cols-2 gap-3"
-                                : "flex flex-col gap-2"
-                            }
-                          >
-                            {tag.items.map((item, idx) => (
-                              <label
-                                key={idx}
-                                className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md"
-                              >
-                                <input
-                                  type="checkbox"
-                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                  checked={formData.event_category_slugs.includes(
-                                    item
-                                  )}
-                                  onChange={(e) =>
-                                    handleCategoryChange(item, e.target.checked)
-                                  }
-                                  aria-label={
-                                    formData.event_category_slugs.includes(item)
-                                      ? `Uncheck ${item}`
-                                      : `Check ${item}`
-                                  }
-                                />
-                                <span className="text-sm text-gray-600">
-                                  {item}
-                                </span>
-                              </label>
-                            ))}
+            <div className="col-span-3 mt-8 2xl:mt-0 2xl:col-span-1">
+              <div className="w-full">
+                <h5 className="font-semibold text-lg mb-4 text-center">
+                  Meeting Tags
+                </h5>
+                <div className=" flex flex-col items-center p-2 bg-primary-light rounded-lg m-auto">
+                  <div className="w-full flex justify-center items-center p-2 border-b-[1px] pb-0">
+                    <div className="flex w-1/2 justify-center">
+                      <input
+                        type="checkbox"
+                        checked={formData.event_featured}
+                        onChange={(e) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            event_featured: e.target.checked === true,
+                          }));
+                        }}
+                      />
+                      <span className="p-3 font-bold text-shadow-md">
+                        Featured Event
+                      </span>
+                    </div>
+                    <div className="flex w-1/2 justify-center">
+                      <input
+                        type="checkbox"
+                        checked={formData.event_popup}
+                        onChange={(e) => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            event_popup: e.target.checked === true,
+                          }));
+                        }}
+                      />
+                      <span className="p-3 font-bold text-shadow-md">
+                        Pop Up Event
+                      </span>
+                    </div>
+                  </div>
+                  <div
+                    className="grid grid-cols-3 gap-6 w-full max-h-[500px] overflow-y-auto pt-2
+                      scrollbar scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100
+                      hover:scrollbar-thumb-gray-500 px-4"
+                  >
+                    {meetingTags.map((tag, index) => (
+                      <div
+                        key={index}
+                        className="col-span-1 2xl:col-span-3 bg-white rounded-lg shadow-sm mb-4 p-4"
+                      >
+                        <div className="flex flex-col">
+                          <label className="flex items-center gap-2 mb-3 cursor-pointer hover:bg-gray-50 p-2 rounded-md">
+                            <input
+                              type="checkbox"
+                              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              checked={isParentChecked(tag)}
+                              ref={(input) => {
+                                if (input) {
+                                  input.indeterminate =
+                                    isParentIndeterminate(tag);
+                                }
+                              }}
+                              onChange={(e) =>
+                                handleCategoryChange(
+                                  tag.category,
+                                  e.target.checked
+                                )
+                              }
+                              aria-label={
+                                isParentChecked(tag) ? "Uncheck all" : "Check all"
+                              }
+                            />
+                            <span className="text-sm font-medium text-gray-700">
+                              {tag.category}
+                            </span>
+                          </label>
+
+                          <div className="ml-6 border-l-2 border-gray-100 pl-4">
+                            <div
+                              className={
+                                index === 0
+                                  ? "grid grid-cols-1 xl:grid-cols-2 gap-3 "
+                                  : "flex flex-col gap-2"
+                              }
+                            >
+                              {tag.items.map((item, idx) => (
+                                <label
+                                  key={idx}
+                                  className="col-span-1 flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    checked={formData.event_category_slugs.includes(
+                                      item
+                                    )}
+                                    onChange={(e) =>
+                                      handleCategoryChange(item, e.target.checked)
+                                    }
+                                    aria-label={
+                                      formData.event_category_slugs.includes(item)
+                                        ? `Uncheck ${item}`
+                                        : `Check ${item}`
+                                    }
+                                  />
+                                  <span className="text-sm text-gray-600">
+                                    {item}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-2 justify-around mt-8 m-auto px-8">
-                <button
-                  className="px-4 py-2 rounded-md hover:bg-primary hover:text-white focus:outline-none border duration-300 ease-in-out"
-                  onClick={() => handleSubmit("publish")}
-                >
-                  Create and Publish
-                </button>
-                <button
-                  className="px-4 py-2 rounded-md hover:bg-primary hover:text-white focus:outline-none border duration-300 ease-in-out"
-                  onClick={() => handleSubmit("draft")}
-                >
-                  Create in Drafts
-                </button>
+                <div className="flex gap-2 justify-around mt-8 m-auto px-8">
+                  <button
+                    className="px-4 py-2 rounded-md hover:bg-primary hover:text-white focus:outline-none border duration-300 ease-in-out"
+                    onClick={() => handleSubmit("publish")}
+                  >
+                    Create and Publish
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded-md hover:bg-primary hover:text-white focus:outline-none border duration-300 ease-in-out"
+                    onClick={() => handleSubmit("draft")}
+                  >
+                    Create in Drafts
+                  </button>
+                </div>
               </div>
             </div>
           </div>
