@@ -65,10 +65,10 @@ export const usAddresses = [
 ];
 
 // import { useState, useEffect, useRef } from "react"
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet"
-import { LatLngExpression } from 'leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { LatLngExpression } from "leaflet";
 const center: LatLngExpression = [51.505, -0.09];
-import "leaflet/dist/leaflet.css"
+import "leaflet/dist/leaflet.css";
 // import L from "leaflet"
 
 // delete L.Icon.Default.prototype._getIconUrl
@@ -79,50 +79,53 @@ import "leaflet/dist/leaflet.css"
 // })
 
 interface Location {
-  lat: number
-  lng: number
+  lat: number;
+  lng: number;
 }
 
 interface Suggestion {
-  place_id: number
-  display_name: string
-  lat: string
-  lon: string
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
 }
 
-function MapEvents({ onLocationSelected }: { onLocationSelected: (location: Location) => void }) {
+function MapEvents({
+  onLocationSelected,
+}: {
+  onLocationSelected: (location: Location) => void;
+}) {
   useMapEvents({
     click(e) {
-      onLocationSelected(e.latlng)
+      onLocationSelected(e.latlng);
     },
-  })
-  return null
+  });
+  return null;
 }
 
-
-
 const CreateEvent: React.FC = () => {
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
-  const [placeName, setPlaceName] = useState("")
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isMapLoading, setMapLoading] = useState(false)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(
+    null
+  );
+  const [placeName, setPlaceName] = useState("");
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isMapLoading, setMapLoading] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [value, setValue] = useState("");
-  // const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredAddresses, setFilteredAddresses] = useState(usAddresses);
 
-
   const handleLocationSelected = async (location: Location) => {
-    setSelectedLocation(location)
-    setMapLoading(true)
+    console.log(filteredAddresses)
+    setSelectedLocation(location);
+    setMapLoading(true);
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.lat}&lon=${location.lng}&zoom=18&addressdetails=1`,
-      )
-      const data = await response.json()
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.lat}&lon=${location.lng}&zoom=18&addressdetails=1`
+      );
+      const data = await response.json();
 
-      const address = data.address
+      const address = data.address;
       const formattedAddress = [
         address.road,
         address.city || address.town || address.village,
@@ -130,58 +133,63 @@ const CreateEvent: React.FC = () => {
         address.country,
       ]
         .filter(Boolean)
-        .join(", ")
+        .join(", ");
 
-      setPlaceName(formattedAddress || "Unknown location")
-      setSuggestions([])
+      setPlaceName(formattedAddress || "Unknown location");
+      setSuggestions([]);
     } catch (error) {
-      console.error("Error fetching place name:", error)
-      setPlaceName("Error fetching place name")
+      console.error("Error fetching place name:", error);
+      setPlaceName("Error fetching place name");
     }
-    setMapLoading(false)
-  }
+    setMapLoading(false);
+  };
 
   const handleMapInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+    const value = e.target.value;
     setValue(e.target.value);
-    setPlaceName(value)
+    setPlaceName(value);
 
     if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
+      clearTimeout(timeoutRef.current);
     }
 
     timeoutRef.current = setTimeout(async () => {
       if (value.length > 2) {
         try {
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}`,
-          )
-          const data = await response.json()
-          setSuggestions(data)
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+              value
+            )}`
+          );
+          const data = await response.json();
+          setSuggestions(data);
         } catch (error) {
-          console.error("Error fetching suggestions:", error)
+          console.error("Error fetching suggestions:", error);
         }
       } else {
-        setSuggestions([])
+        setSuggestions([]);
       }
-    }, 300)
-  }
+    }, 300);
+  };
 
   const handleSuggestionClick = (suggestion: Suggestion) => {
     // setValue(suggestion);
     // alert(suggestion);
-    setPlaceName(suggestion.display_name)
-    setSelectedLocation({ lat: Number.parseFloat(suggestion.lat), lng: Number.parseFloat(suggestion.lon) })
-    setSuggestions([])
-  }
+    setPlaceName(suggestion.display_name);
+    setSelectedLocation({
+      lat: Number.parseFloat(suggestion.lat),
+      lng: Number.parseFloat(suggestion.lon),
+    });
+    setSuggestions([]);
+  };
 
   useEffect(() => {
     return () => {
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
+        clearTimeout(timeoutRef.current);
       }
-    }
-  }, [])
+    };
+  }, []);
 
   useEffect(() => {
     if (value) {
@@ -339,15 +347,15 @@ const CreateEvent: React.FC = () => {
 
   useEffect(() => {
     // if (formData.event_is_virtual === true) {
-      // setMapLoading(true)
-      handleZoomLink();
+    // setMapLoading(true)
+    handleZoomLink();
     // }
   }, [formData.event_is_virtual]);
 
   const createZoomLink = useMutation({
     mutationFn: async (data: any) => createZoomLinkApi(token, data),
     onSuccess: (res: any) => {
-      setMapLoading(false)
+      setMapLoading(false);
       const link = res.data.data.response.start_url;
       setFormData((prev) => ({
         ...prev,
@@ -355,7 +363,7 @@ const CreateEvent: React.FC = () => {
       }));
     },
     onError: (error: any) => {
-      setMapLoading(false)
+      setMapLoading(false);
       console.error("Submission failed", error);
     },
   });
@@ -584,7 +592,10 @@ const CreateEvent: React.FC = () => {
                 <div className="flex flex-col gap-5">
                   <div className="flex gap-4 justify-between">
                     <label className="text-sm mt-2">
-                      <span className="text-red-500" style={{color: "red"}}>* </span>Title
+                      <span className="text-red-500" style={{ color: "red" }}>
+                        *{" "}
+                      </span>
+                      Title
                     </label>
                     <input
                       type="text"
@@ -613,7 +624,10 @@ const CreateEvent: React.FC = () => {
                   </div>
                   <div className="flex gap-15 justify-between">
                     <label className="text-sm mt-2">
-                    <span className="text-red-500" style={{color: "red"}}>* </span>Date
+                      <span className="text-red-500" style={{ color: "red" }}>
+                        *{" "}
+                      </span>
+                      Date
                     </label>
                     <input
                       type="date"
@@ -629,7 +643,10 @@ const CreateEvent: React.FC = () => {
                   </div>
                   <div className="flex gap-15 justify-between">
                     <label className="text-sm mt-2">
-                    <span className="text-red-500" style={{color: "red"}}>* </span>Time
+                      <span className="text-red-500" style={{ color: "red" }}>
+                        *{" "}
+                      </span>
+                      Time
                     </label>
                     <div className="flex justify-between">
                       <input
@@ -646,7 +663,9 @@ const CreateEvent: React.FC = () => {
                         }}
                         required
                         className={`border p-2 rounded ${
-                          eventStartTime ? "border-red-600" : "border-gray-border"
+                          eventStartTime
+                            ? "border-red-600"
+                            : "border-gray-border"
                         } w-[130px]`}
                       />
                       <span className="p-3">to</span>
@@ -676,8 +695,7 @@ const CreateEvent: React.FC = () => {
                           name="event_is_virtual" // Same name for both radio buttons
                           checked={selected === "yes"}
                           // checked={formData.event_is_virtual}
-                          onChange={(e) => {
-                            
+                          onChange={() => {
                             setSelected("yes");
                             // setFormData((prev) => ({
                             //   ...prev,
@@ -695,7 +713,7 @@ const CreateEvent: React.FC = () => {
                           name="event_is_virtual" // Same name for both radio buttons
                           value="disabled"
                           checked={selected === "no"}
-                          onChange={(e) => {
+                          onChange={() => {
                             setSelected("no");
                             // setFormData((prev) => ({
                             //   ...prev,
@@ -717,7 +735,9 @@ const CreateEvent: React.FC = () => {
                       id="event_meeting_link"
                       name="event_meeting_link"
                       readOnly
-                      value={selected === "yes" ? formData.event_meeting_link : ""}
+                      value={
+                        selected === "yes" ? formData.event_meeting_link : ""
+                      }
                       disabled={!formData.event_is_virtual}
                       onChange={handleInputChange}
                       required
@@ -884,76 +904,93 @@ const CreateEvent: React.FC = () => {
                 </div>
               </div>
               <div className="pt-6 mx-6 ">
-                  <div className="input-container mb-6  flex justify-start items-center" style={{ marginTop: "20px", position: "relative" }}>
-                    <label htmlFor="location-input" className="text-sm mt-2 w-1/6">Event Location:</label>
-                    <input
-                      // id="location-input"
-                      type="text"
-                      id="event_location"
-                      name="event_location"
-                      // value={value}
-                      // onChange={(e) => {
-                      //   setValue(e.target.value);
-                      // }}
-                      value={isMapLoading ? "Loading...": placeName}
-                      onChange={handleMapInputChange}
-                      placeholder="Type to search or click on the map"
-                      className="border w-[300px] border-gray-border p-2 rounded"
-                    />
-                    {suggestions.length > 0 && (
-                      <ul
-                        className="suggestions"
-                        style={{
-                          position: "absolute",
-                          top: "100%",
-                          left: 0,
-                          right: 0,
-                          backgroundColor: "white",
-                          border: "1px solid #ccc",
-                          borderTop: "none",
-                          maxHeight: "200px",
-                          overflowY: "auto",
-                          zIndex: 1000,
-                          listStyle: "none",
-                          padding: 0,
-                          margin: 0,
-                        }}
-                      >
-                        {suggestions.map((suggestion) => (
-                          <li
-                            key={suggestion.place_id}
-                            onClick={() => handleSuggestionClick(suggestion)}
-                            style={{
-                              padding: "5px",
-                              cursor: "pointer",
-                              borderBottom: "1px solid #eee",
-                            }}
-                          >
-                            {suggestion.display_name}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                  <div className="map-selector">
-                    <div className="map-container" style={{ height: "400px", width: "100%" }}>
-                      <MapContainer 
-                      center={center} zoom={13}
-                      style={{ height: "100%", width: "100%" }}>
-                        <TileLayer
-                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                <div
+                  className="input-container mb-6  flex justify-start items-center"
+                  style={{ marginTop: "20px", position: "relative" }}
+                >
+                  <label
+                    htmlFor="location-input"
+                    className="text-sm mt-2 w-1/6"
+                  >
+                    Event Location:
+                  </label>
+                  <input
+                    // id="location-input"
+                    type="text"
+                    id="event_location"
+                    name="event_location"
+                    // value={value}
+                    // onChange={(e) => {
+                    //   setValue(e.target.value);
+                    // }}
+                    value={isMapLoading ? "Loading..." : placeName}
+                    onChange={handleMapInputChange}
+                    placeholder="Type to search or click on the map"
+                    className="border w-[300px] border-gray-border p-2 rounded"
+                  />
+                  {suggestions.length > 0 && (
+                    <ul
+                      className="suggestions"
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        backgroundColor: "white",
+                        border: "1px solid #ccc",
+                        borderTop: "none",
+                        maxHeight: "200px",
+                        overflowY: "auto",
+                        zIndex: 1000,
+                        listStyle: "none",
+                        padding: 0,
+                        margin: 0,
+                      }}
+                    >
+                      {suggestions.map((suggestion) => (
+                        <li
+                          key={suggestion.place_id}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          style={{
+                            padding: "5px",
+                            cursor: "pointer",
+                            borderBottom: "1px solid #eee",
+                          }}
+                        >
+                          {suggestion.display_name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div className="map-selector">
+                  <div
+                    className="map-container"
+                    style={{ height: "400px", width: "100%" }}
+                  >
+                    <MapContainer
+                      center={center}
+                      zoom={13}
+                      style={{ height: "100%", width: "100%" }}
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <MapEvents onLocationSelected={handleLocationSelected} />
+                      {selectedLocation && (
+                        <Marker
+                          position={[
+                            selectedLocation.lat,
+                            selectedLocation.lng,
+                          ]}
                         />
-                        <MapEvents onLocationSelected={handleLocationSelected} />
-                        {selectedLocation && <Marker position={[selectedLocation.lat, selectedLocation.lng]} />}
-                      </MapContainer>
-                    </div>
+                      )}
+                    </MapContainer>
                   </div>
                 </div>
-              
+              </div>
             </div>
-            
-            
 
             <div className="col-span-3 mt-8 2xl:mt-0 2xl:col-span-1">
               <div className="w-full">
@@ -1022,7 +1059,9 @@ const CreateEvent: React.FC = () => {
                                 )
                               }
                               aria-label={
-                                isParentChecked(tag) ? "Uncheck all" : "Check all"
+                                isParentChecked(tag)
+                                  ? "Uncheck all"
+                                  : "Check all"
                               }
                             />
                             <span className="text-sm font-medium text-gray-700">
@@ -1050,10 +1089,15 @@ const CreateEvent: React.FC = () => {
                                       item
                                     )}
                                     onChange={(e) =>
-                                      handleCategoryChange(item, e.target.checked)
+                                      handleCategoryChange(
+                                        item,
+                                        e.target.checked
+                                      )
                                     }
                                     aria-label={
-                                      formData.event_category_slugs.includes(item)
+                                      formData.event_category_slugs.includes(
+                                        item
+                                      )
                                         ? `Uncheck ${item}`
                                         : `Check ${item}`
                                     }
@@ -1089,7 +1133,7 @@ const CreateEvent: React.FC = () => {
           </div>
           <div className="mt-1">
             <RecurringComponent
-             isPublished={false}
+              isPublished={false}
               isRecurring={formData.event_recurring}
               setIsRecurring={handleRecurringChange}
               repeatEvery={formData.event_repeat_every}
