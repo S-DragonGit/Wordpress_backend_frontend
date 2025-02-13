@@ -8,7 +8,7 @@ import { useSelector } from "react-redux";
 import { selectCurrentId, selectCurrentToken } from "../app/redux/userSlice";
 import { NotificationFormData } from "../types/types";
 import { useDispatch } from "react-redux";
-import { setNotifications } from "./redux/notificationSlice";
+import { setNotifications, setLoading } from "./redux/notificationSlice";
 import { useMutation } from "@tanstack/react-query";
 
 export const useAllNotificationData = () => {
@@ -21,6 +21,7 @@ export const useAllNotificationData = () => {
 
   return useMutation({
     mutationFn: async () => {
+      dispatch(setLoading(true));
       const response = await getAllNotificationApi(token, data);
       // The data structure you showed is in response.data
       return response.data.notifications;
@@ -46,6 +47,7 @@ export const useDraftNotificationData = () => {
 
   return useMutation({
     mutationFn: async () => {
+      dispatch(setLoading(true));
       const response = await getDraftNotificationApi(token, data);
       // The data structure you showed is in response.data
       return response.data.notifications;
