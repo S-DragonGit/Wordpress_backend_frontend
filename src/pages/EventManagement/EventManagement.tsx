@@ -132,9 +132,7 @@ const EventManagement = () => {
 
   return (
     <>
-      {isLoading || isLoadingScreen? (
-        <LoadingScreen />
-      ) : (
+      
         <div className="flex flex-col items-center w-full gap-5">
           <div className="flex items-center gap-4 justify-between w-full">
             <Link to={"/eventManagement/create"}>
@@ -165,6 +163,9 @@ const EventManagement = () => {
                   setActiveSwitch={setSwitchTwo}
                 />
               </div>
+              {isLoading || isLoadingScreen? (
+                <LoadingScreen />
+              ) : (
               <div className="w-full">
                 {isLoading ? (
                   <div className="flex justify-center item-center">
@@ -185,7 +186,7 @@ const EventManagement = () => {
                     onViewDetails={handleOnViewDetails}
                   />
                 )}
-              </div>
+              </div>)}
             </>
           ) : (
             <div className="w-full">
@@ -194,7 +195,6 @@ const EventManagement = () => {
             </div>
           )}
         </div>
-      )}
     </>
   );
 };

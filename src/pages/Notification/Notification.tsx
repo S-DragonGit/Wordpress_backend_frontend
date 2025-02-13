@@ -14,11 +14,13 @@ import type { NotificationFormData } from "../../types/types"
 import { useNavigate } from "react-router-dom"
 import TableNotification from "../../components/TableNotification"
 import LoadingScreen from "../../components/LoadingScreen"
+import { useSelector } from "react-redux"
+// import { setLoading } from "../../app/redux/eventSlice"
 
 const Notification = () => {
   const switchList = ["Sent", "Scheduled", "Draft"]
   const [switchTwo, setSwitchTwo] = useState("Sent")
-  const [isLoading, setIsLoading] = useState(true) // Start with loading true
+  // const [isLoading, setIsLoading] = useState(true) // Start with loading true
 
   const { mutate: mutateSent, data: dataSent } = useSentNotificationData()
   const { mutate: mutateDraft, data: dataDraft } = useDraftNotificationData()
@@ -39,7 +41,7 @@ const Notification = () => {
 
   const handleSwitchChange = useCallback(
     (value: string) => {
-      setIsLoading(true)
+      // setIsLoading(true)
       setSwitchTwo(value)
 
       switch (value) {
@@ -65,11 +67,11 @@ const Notification = () => {
   }, [handleSwitchChange, switchTwo]) // Added missing dependencies
 
   // Update loading state when data changes
-  useEffect(() => {
-    if (getCurrentData()) {
-      setIsLoading(false)
-    }
-  }, [dataSent, dataScheduled, dataDraft, switchTwo])
+  // useEffect(() => {
+  //   if (getCurrentData()) {
+  //     setIsLoading(false)
+  //   }
+  // }, [dataSent, dataScheduled, dataDraft, switchTwo])
 
   const columns = getNotificationColumns()
   const navigate = useNavigate()
@@ -79,11 +81,10 @@ const Notification = () => {
     navigate(`/notifications/${notification.post_id}`)
   }
 
+  const isLoading = useSelector((state: any) => state.notification.isLoading);
   return (
     <>
-      {isLoading ? (
-        <LoadingScreen />
-      ) : (
+      
         <div className="flex flex-col items-center w-full gap-5">
           <div className="flex items-center gap-4  w-full">
             <Link to={"/notifications/create"}>
@@ -103,11 +104,14 @@ const Notification = () => {
           <div className="mt-2 w-[90%]">
             <SwitcherTwo list={switchList} activeSwitch={switchTwo} setActiveSwitch={handleSwitchChange} />
           </div>
+          {isLoading ? (
+            <LoadingScreen />
+          ) : (
           <div className="w-full">
             <TableNotification columns={columns} data={getCurrentData() || []} onViewDetails={handleViewDetails} />
           </div>
+          )}
         </div>
-      )}
     </>
   )
 }
