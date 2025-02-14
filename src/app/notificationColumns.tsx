@@ -73,6 +73,7 @@ export const useSentNotificationData = () => {
 
   return useMutation({
     mutationFn: async () => {
+      dispatch(setLoading(true));
       const response = await getSentNotificationApi(token, data);
       // The data structure you showed is in response.data
       return response.data.notifications;
@@ -98,6 +99,7 @@ export const useSecheduledNotificationData = () => {
 
   return useMutation({
     mutationFn: async () => {
+      dispatch(setLoading(true));
       const response = await getScheduledNotificationApi(token, data);
       // The data structure you showed is in response.data
       return response.data.notifications;
