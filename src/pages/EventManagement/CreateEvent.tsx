@@ -28,7 +28,7 @@ export const usAddresses = [
   "753 Maplewood Dr, San Diego, CA 92101",
   "852 Cedarwood Ln, Austin, TX 78701",
   "741 Birchwood Ct, Portland, OR 97201",
-  "963 Willowbrook Rd, Las Vegas, NV 89101",
+  "963 Willowbrook Rd, Las Vegas, NV 89102",
   "852 Sprucewood Ave, Nashville, TN 37201",
   "147 Oakridge Dr, San Antonio, TX 78201",
   "369 Mapleleaf Ln, Charlotte, NC 28201",
