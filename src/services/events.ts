@@ -50,7 +50,7 @@ export const updateEventApi = async (token: string, data: any) => {
 export const getEventById = async (token: string, data: any) => {
     try {
         console.log("Request body: ", data);
-        console.log("Token: ", token);
+        // console.log("Token: ", token);
         const response = await postData("/v2/get/event", data, token);
         return response;
     } catch (error: any) {
@@ -62,7 +62,7 @@ export const getEventById = async (token: string, data: any) => {
 export const updateEventStatusApi = async (token: string, data: any) => {
     try {
         console.log("Request body: ", data);
-        console.log("Token: ", token);
+        // console.log("Token: ", token);
         const response = await postData("/v2/update/event/status", data, token);
         return response;
     } catch (error: any) {

@@ -241,17 +241,68 @@ export const formFieldNotification: FormOneProps[] = [
   },
 ];
 
-export const meetingTags = [
+interface Meetingtag {
+  id: string
+  label: string
+  slug: string
+}
+
+interface MeetingTags {
+  id: string
+  label: string
+  slug: string
+  subcategories: Meetingtag[]
+}
+export const meetingTags: MeetingTags[] = [
   {
-    category: "Therapy",
-    items: ["Individual", "Family", "Trauma", "Support Groups", "Grief Counseling", "Depression / Anxiety"],
+    id: "therapy",
+    label: "Therapy",
+    slug: "therapy",
+    subcategories: [
+      { id: "individual", label: "Individual", slug: "individual-therapy" },
+      { id: "family", label: "Family", slug: "family-therapy" },
+      { id: "trauma", label: "Trauma", slug: "trauma-therapy" },
+      { id: "support-groups", label: "Support Groups", slug: "support-groups" },
+      { id: "grief-counseling", label: "Grief Counseling", slug: "grief-counseling" },
+      { id: "depression-anxiety", label: "Depression / Anxiety", slug: "depression-anxiety-therapy" },
+    ],
   },
   {
-    category: "Health Screening",
-    items: ["Cancer Screening", "High Blood Pressure", "Heart Disease", "Diabetes/Blood Sugar", "Vaccine", "STDs"],
+    id: "health-screening",
+    label: "Health Screening",
+    slug: "health-screening",
+    subcategories: [
+      { id: "cancer-screening", label: "Cancer Screening", slug: "cancer-screening" },
+      { id: "high-blood-pressure", label: "High Blood Pressure", slug: "high-blood-pressure-screening" },
+      { id: "heart-disease", label: "Heart Disease", slug: "heart-disease-screening" },
+      { id: "diabetes", label: "Diabetes/Blood Sugar", slug: "diabetes-screening" },
+      { id: "vaccine", label: "Vaccine", slug: "vaccine" },
+      { id: "stds", label: "STDs", slug: "std-screening" },
+    ],
   },
   {
-    category: "CAM Clinic",
-    items: ["Acupuncture", "Chiropractic Care", "Massage Therapy", "Yoga"],
+    id: "cam-clinic",
+    label: "CAM Clinic",
+    slug: "cam-clinic",
+    subcategories: [
+      { id: "acupuncture", label: "Acupuncture", slug: "acupuncture" },
+      { id: "chiropractic", label: "Chiropractic Care", slug: "chiropractic-care" },
+      { id: "massage", label: "Massage Therapy", slug: "massage-therapy" },
+      { id: "yoga", label: "Yoga", slug: "yoga" },
+    ],
   },
-];
+]
+// export const meetingTags = [
+//   {
+//     category: "Therapy",
+//     items: ["Individual", "Family", "Trauma", "Support Groups", "Grief Counseling", "Depression / Anxiety"],
+//   },
+//   {
+//     category: "Health Screening",
+//     items: ["Cancer Screening", "High Blood Pressure", "Heart Disease", "Diabetes/Blood Sugar", "Vaccine", "STDs"],
+//   },
+//   {
+//     category: "CAM Clinic",
+//     items: ["Acupuncture", "Chiropractic Care", "Massage Therapy", "Yoga"],
+//   },
+// ];

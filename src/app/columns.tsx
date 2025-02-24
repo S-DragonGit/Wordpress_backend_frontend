@@ -6,42 +6,42 @@ export const eventPublishedColumns = [
   {
     header: "Date",
     accessor: "post_date",
-    Cell: ({ value }: { value: any }) => {
-      if (!value) return "";
+    // Cell: ({ value }: { value: any }) => {
+    //   if (!value) return "";
 
-      const date = new Date(value);
-      const formattedDate = date.toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
+    //   const date = new Date(value);
+    //   const formattedDate = date.toLocaleString("en-US", {
+    //     year: "numeric",
+    //     month: "short",
+    //     day: "numeric",
+    //   });
 
-      return formattedDate;
-    },
+    //   return formattedDate;
+    // },
   },
   {
     header: "Event Category",
-    accessor: "event_categories",
+    accessor: "event_category",
   },
   {
     header: "Event Date",
     accessor: "_EventStartDate",
-    Cell: ({ value }: { value: any }) => {
-      if (!value || !value[0]) return "";
+    // Cell: ({ value }: { value: any }) => {
+    //   if (!value || !value[0]) return "";
 
-      const date = new Date(value[0]);
-      const formattedDate = date.toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
+    //   const date = new Date(value[0]);
+    //   const formattedDate = date.toLocaleString("en-US", {
+    //     year: "numeric",
+    //     month: "short",
+    //     day: "numeric",
+    //   });
 
-      return formattedDate;
-    },
+    //   return formattedDate;
+    // },
   },
   {
     header: "Event Type",
-    accessor: "post_type",
+    accessor: "event_type",
   },
   {
     header: "Member(s)",
@@ -65,19 +65,19 @@ export const eventDraftedColumns = [
   },
   {
     header: "Date",
-    accessor: "Date", // Maps to the `Date` field in data
+    accessor: "post_date", // Maps to the `Date` field in data
   },
   {
     header: "Event Category",
-    accessor: "Category", // Maps to the `Category` field in data
+    accessor: "event_category", // Maps to the `Category` field in data
   },
   {
     header: "Event Date",
-    accessor: "post_date", // Maps to the `EventDate` field in data
+    accessor: "_EventStartDate", // Maps to the `EventDate` field in data
   },
   {
     header: "Event Type",
-    accessor: "post_type", // Maps to the `Type` field in data
+    accessor: "event_type", // Maps to the `Type` field in data
   },
   {
     header: "Member(s)",

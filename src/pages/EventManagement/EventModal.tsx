@@ -13,11 +13,11 @@ import { EventState, selectCurrentEvent } from "../../app/redux/eventSlice";
 import toast from "react-hot-toast";
 import { Pencil, Trash2, Plus, X, Check } from "lucide-react";
 import { createZoomLinkApi } from "../../services/events";
-import { usAddresses } from "./CreateEvent";
 import LoadingScreen from "../../components/LoadingScreen";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet"
-import { LatLngExpression } from 'leaflet';
-const center: LatLngExpression = [51.505, -0.09];
+// import { LatLngExpression } from 'leaflet';
+import { TimePicker } from "../../components/TimePicker";
+// const center: LatLngExpression = [51.505, -0.09];
 import "leaflet/dist/leaflet.css"
 
 interface Location {
@@ -25,11 +25,25 @@ interface Location {
   lng: number
 }
 
+const defaultLocation = {
+  lat: 34.0522,
+  lng: -118.2437,
+  address: "Los Angeles, CA 90012"
+};
+
 interface Suggestion {
-  place_id: number
-  display_name: string
-  lat: string
-  lon: string
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
+  address?: {
+    house_number?: string;
+    road?: string;
+    city?: string;
+    municipality?: string;
+    state?: string;
+    postcode?: string;
+  };
 }
 
 function MapEvents({ onLocationSelected }: { onLocationSelected: (location: Location) => void }) {
@@ -51,15 +65,19 @@ export function parsePHPSerialized(input: string | Question[]): Question[] {
     /i:\d+;a:4:\{s:2:"id";i:(\d+);s:4:"text";s:\d+:"([^"]*)";s:4:"type";s:\d+:"([^"]*)";s:6:"answer";s:\d+:"([^"]*)";}/g;
   let match;
 
+ 
+
   while ((match = regex.exec(input)) !== null) {
     const [, id, text, type] = match;
+    console.log("match:", match);
     questions.push({
       id: Number.parseInt(id),
       text,
       type: type as "yesno" | "review",
+      answer: ""
     });
   }
-
+  
   if (questions.length === 0) {
     console.error("Failed to parse any questions from the input");
   }
@@ -67,78 +85,128 @@ export function parsePHPSerialized(input: string | Question[]): Question[] {
   return questions;
 }
 
+export function parsePHPSerializedCategories(input: string | string[]): string[] {
+  if (Array.isArray(input)) {
+    return input;
+  }
+  const categories: string[] = [];
+  const regex = /s:\d+:"(.*?)";/g;
+  let match;
+
+  while ((match = regex.exec(input)) !== null) {
+    // categories.push(match[1]);
+    if (!match[1].startsWith('a:') && !match[1].includes('{i:')) {
+      categories.push(match[1]);
+    }
+  }
+
+  if (categories.length === 0) {
+    console.error("Failed to parse any questions from the input");
+  }
+
+  return categories;
+}
+
 const EventModal: React.FC = () => {
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isMapLoading, setMapLoading] = useState(false)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const [value, setValue] = useState("");
-  const [filteredAddresses, setFilteredAddresses] = useState(usAddresses);
+  const initialCenter: [number, number] = [defaultLocation.lat, defaultLocation.lng];
+  // setCenter([defaultLocation.lat, defaultLocation.lng]);
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>({
+      lat: defaultLocation.lat,
+      lng: defaultLocation.lng
+    });
 
-  const handleLocationSelected = async (location: Location) => {
-    console.log(filteredAddresses)
-      setSelectedLocation(location)
-      setMapLoading(true)
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.lat}&lon=${location.lng}&zoom=18&addressdetails=1`,
-        )
-        const data = await response.json()
-  
-        const address = data.address
-        const formattedAddress = [
-          address.road,
-          address.city || address.town || address.village,
-          address.postcode,
-          address.country,
-        ]
-          .filter(Boolean)
-          .join(", ")
-  
-        setPlaceName(formattedAddress || "Unknown location")
-        setSuggestions([])
-      } catch (error) {
-        console.error("Error fetching place name:", error)
-        setPlaceName("Error fetching place name")
-      }
-      setMapLoading(false)
-    }
-  
-    const handleMapInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value
-      setValue(e.target.value);
-      setPlaceName(value)
-  
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-  
-      timeoutRef.current = setTimeout(async () => {
-        if (value.length > 2) {
-          try {
-            const response = await fetch(
-              `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}`,
-            )
-            const data = await response.json()
-            setSuggestions(data)
-          } catch (error) {
-            console.error("Error fetching suggestions:", error)
-          }
-        } else {
-          setSuggestions([])
+  useEffect(() => {
+      handleDefaultLocation();
+    }, []);
+
+    const handleDefaultLocation = async (): Promise<void> => {
+      if (!event) {
+        setMapLoading(true);
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${defaultLocation.lat}&lon=${defaultLocation.lng}`
+          );
+          const data = await response.json();
+          const formattedAddress = formatAddress(data.address);
+          setPlaceName(formattedAddress);
+        } catch (error) {
+          console.error("Error setting default location:", error);
+          setPlaceName(defaultLocation.address);
         }
-      }, 300)
+        setMapLoading(false);
+      };
     }
-  
+
+    const handleLocationSelected = async (location: Location) => {
+      // console.log(filteredAddresses)
+        setSelectedLocation(location)
+        setMapLoading(true)
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.lat}&lon=${location.lng}&zoom=18&addressdetails=1`,
+          )
+          const data = await response.json()
+    
+          const address = data.address
+          const formattedAddress = [
+            address.road,
+            address.city || address.town || address.village,
+            address.postcode,
+            address.country,
+          ]
+            .filter(Boolean)
+            .join(", ")
+    
+          setPlaceName(formattedAddress || "Unknown location")
+          setSuggestions([])
+        } catch (error) {
+          console.error("Error fetching place name:", error)
+          setPlaceName("Error fetching place name")
+        }
+        setMapLoading(false)
+      }
+
+    const handleMapInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        // setValue(e.target.value);
+        setPlaceName(value);
+    
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+    
+        timeoutRef.current = setTimeout(async () => {
+          if (value.length > 2) {
+            try {
+              const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+                  value
+                )}`
+              );
+              const data = await response.json();
+              setSuggestions(data);
+            } catch (error) {
+              console.error("Error fetching suggestions:", error);
+            }
+          } else {
+            setSuggestions([]);
+          }
+        }, 300);
+      };
+
     const handleSuggestionClick = (suggestion: Suggestion) => {
-      // setValue(suggestion);
-      // alert(suggestion);
-      setPlaceName(suggestion.display_name)
-      setSelectedLocation({ lat: Number.parseFloat(suggestion.lat), lng: Number.parseFloat(suggestion.lon) })
-      setSuggestions([])
-    }
-  
+
+      setPlaceName(suggestion.display_name);
+      setSelectedLocation({
+        lat: Number.parseFloat(suggestion.lat),
+        lng: Number.parseFloat(suggestion.lon),
+      });
+      setSuggestions([]);
+    };
+
     useEffect(() => {
       return () => {
         if (timeoutRef.current) {
@@ -147,21 +215,26 @@ const EventModal: React.FC = () => {
       }
     }, [])
 
-  useEffect(() => {
-    if (value) {
-      setFilteredAddresses(
-        usAddresses.filter((address) =>
-          address.toLowerCase().includes(value.toLowerCase())
-        )
-      );
-    } else {
-      setFilteredAddresses(usAddresses);
-    }
-  }, [value]);
+    const formatAddress = (address: Suggestion['address']): string => {
+      if (!address) return defaultLocation.address;
+      
+      const components: string[] = [];
+      
+      if (address.house_number) components.push(address.house_number);
+      if (address.road) components.push(address.road);
+      if (address.city || address.municipality) components.push((address.city || address.municipality) as string);
+      if (address.state) components.push(address.state);
+      if (address.postcode) components.push(address.postcode);
+      
+      return components.join(", ") || defaultLocation.address;
+    };
+
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  // const [value, setValue] = useState("");
+  // console.log(value);
+  // const [filteredAddresses, setFilteredAddresses] = useState();
 
   const token = useSelector(selectCurrentToken);
-  // const data = useSelector(selectCurrentId);
-  // const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const defaultFormData: EventFormData = {
@@ -188,6 +261,7 @@ const EventModal: React.FC = () => {
     event_modify_event: false,
     event_invite_others: false,
     event_view_member_list: false,
+    event_category: "",
     event_category_slugs: [],
     post_id: null,
     event_featured: false,
@@ -198,45 +272,129 @@ const EventModal: React.FC = () => {
     selectCurrentEvent(state)
   );
 
-  const [isDraft, setIsDraft] = useState<string | undefined>("");
   const [eventTitle, setEventTitle] = useState("");
   const [eventDate, setEventDate] = useState("");
-  const [eventStartTime, setEventStartTime] = useState("");
-  const [eventEndTime, setEventEndTime] = useState("");
-  const [isPublished, setIsPublished] = useState(false);
+  // const [eventStartTime, setEventStartTime] = useState("");
+  // const [eventEndTime, setEventEndTime] = useState("");
+  const [isPublished, setIsPublished] = useState(Boolean);
   const [placeName, setPlaceName] = useState(event?.event_location);
-  // const [selected, setSelected] = useState(event?.event_is_virtual);
-  const [selected, setSelected] = useState(event?.event_is_virtual);
-  // const [isLoading, setIsLoading] = useState(false);
+  const [eventCategorySlugs, setEventCategorySlugs] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([])
 
   const [formData, setFormData] = useState<EventFormData>(
     event ?? defaultFormData
   );
 
-  console.log("first: ", isLoading)
+  const handleCategoryChange = (categoryId: string) => {
+    if (selectedCategory === categoryId) {
+      setSelectedCategory(null)
+      setSelectedSubcategories([])
+      setEventCategorySlugs([])
+    } else {
+      setSelectedCategory(categoryId)
+      const category = meetingTags.find((cat: any) => cat.id === categoryId)
+      if (category) {
+        const allSubcategories = category.subcategories.map((sub: any) => sub.id)
+        setSelectedSubcategories(allSubcategories)
+        setEventCategorySlugs(category.subcategories.map((sub: any) => sub.slug))
+      }
+    }
+    setFormData(
+      (prev) => ({
+        ...prev,
+        event_category_slugs: selectedSubcategories
+      }));
+  }
+
+  const handleSubcategoryChange = (subcategoryId: string, categoryId: string) => {
+    const category = meetingTags.find((cat: any) => cat.id === categoryId)
+    if (!category) return
+
+    if (selectedCategory === categoryId) {
+      setSelectedSubcategories((prev) => {
+        const newSelectedSubcategories = prev.includes(subcategoryId)
+          ? prev.filter((id) => id !== subcategoryId)
+          : [...prev, subcategoryId]
+
+        const newEventCategorySlugs = category.subcategories
+          .filter((sub: any) => newSelectedSubcategories.includes(sub.id))
+          .map((sub: any) => sub.slug)
+
+        setEventCategorySlugs(newEventCategorySlugs)
+        return newSelectedSubcategories
+      })
+    } else {
+      setSelectedCategory(categoryId)
+      setSelectedSubcategories([subcategoryId])
+      const subcategory = category.subcategories.find((sub: any) => sub.id === subcategoryId)
+      setEventCategorySlugs(subcategory ? [subcategory.slug] : [])
+    }
+  }
+
+  // console.log("first: ", isLoading)
 
   useEffect(() => {
     setFormData(event ?? defaultFormData);
-    setValue(event?.event_location || "");
+    // setValue(event?.event_location || "");
     console.log("new data from redux ", formData);
-    setIsLoading(!isLoading);
+
+    if (event?.event_status === "publish") setIsPublished(true);
+    else setIsPublished(false);
+    // setIsLoading(!isLoading);
   }, [event]);
 
   useEffect(() => {
-    console.log(event?.event_status);
-    if (event?.event_status === "publish") setIsPublished(true);
-    else setIsPublished(false);
-  });
+    //ZoomLink create
+    handleZoomLink();
+  }, []);
 
   const [questions, setQuestions] = useState<Question[]>([]);
 
+  // useEffect(() => {
+  //   console.log("test:", eventCategorySlugs);
+  // },[eventCategorySlugs])
   useEffect(() => {
+    setFormData(event ?? defaultFormData);
+    //convert event_question to the Question Array
     if (event?.event_questions) {
+      // debugger
       const parsedQuestions = parsePHPSerialized(event.event_questions);
-      console.log("parsedQuestions", parsedQuestions);
+      console.log("parsedQuestions:", parsedQuestions);
+      // debugger
       setQuestions(parsedQuestions);
     }
+
+    //convert event_category_slugs to the String Array
+    // console.log("event:", event);
+    if (event?.event_category_slugs) {
+      const parsedCategories = parsePHPSerializedCategories(event.event_category_slugs);
+      setEventCategorySlugs(parsedCategories);
+    }
   }, [event]);
+
+  // useEffect(() => {
+  //   console.log("questions:", questions);
+  //   console.log("eventCategorySlugs:", eventCategorySlugs);
+  // }, [questions, eventCategorySlugs]);
+
+  useEffect(() => {
+    // Initialize selected subcategories based on initialEventCategorySlugs
+    const initialSelectedSubcategories: string[] = eventCategorySlugs;
+    let initialSelectedCategory: string | null = null
+
+    meetingTags.forEach((category) => {
+      const selectedSubs = category.subcategories.filter((sub) => eventCategorySlugs.includes(sub.slug))
+      if (selectedSubs.length > 0) {
+        initialSelectedSubcategories.push(...selectedSubs.map((sub) => sub.id))
+        initialSelectedCategory = category.id
+      }
+    })
+
+    setSelectedSubcategories(initialSelectedSubcategories)
+    setSelectedCategory(initialSelectedCategory)
+    // console.log("initial:", eventCategorySlugs);
+  }, [eventCategorySlugs]);
 
   const [newQuestion, setNewQuestion] = useState({
     text: "",
@@ -268,6 +426,7 @@ const EventModal: React.FC = () => {
           id: questions.length + 1,
           text: newQuestion.text,
           type: newQuestion.type,
+          answer: ""
         },
       ];
       setQuestions(sortQuestions(newQuestions));
@@ -299,10 +458,6 @@ const EventModal: React.FC = () => {
   const yesNoQuestions = questions.filter((q) => q.type === "yesno");
   const reviewQuestions = questions.filter((q) => q.type === "review");
 
-  useEffect(() => {
-    setIsDraft(event?.event_status);
-  }, [event]);
-
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   // const [fileName, setFileName] = useState("No file chosen");
 
@@ -311,6 +466,21 @@ const EventModal: React.FC = () => {
       fileInputRef.current.click();
     }
   };
+
+  const handleStartTimeChange = (newTime: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      event_start_time:
+        newTime
+    })); 
+  }
+  const handleEndTimeChange = (newTime: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      event_end_time:
+        newTime
+    })); 
+  }
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -342,64 +512,34 @@ const EventModal: React.FC = () => {
     }));
   };
 
-  const handleCategoryChange = (category: string, checked: boolean) => {
-    const tag = meetingTags.find((t) => t.category === category);
+  const createZoomLink = useMutation({
+  mutationFn: async (data: any) => createZoomLinkApi(token, data),
+  onSuccess: (res: any) => {
+    setIsLoading(false);
+    const link = res.data.data.response.start_url;
+    setFormData((prev) => ({
+      ...prev,
+      event_meeting_link: link,
+    }));
+  },
+  onError: (error: any) => {
+    setIsLoading(false);
+    console.error("Submission failed", error);
+  },
+  });
 
-    if (tag) {
-      setFormData((prev) => {
-        const newSlugs = [...prev.event_category_slugs];
-
-        if (checked) {
-          // Add category and all its items
-          const itemsToAdd = [category, ...tag.items].filter(
-            (item) => !newSlugs.includes(item)
-          );
-          return {
-            ...prev,
-            event_category_slugs: [...newSlugs, ...itemsToAdd],
-          };
-        } else {
-          // Remove category and all its items
-          return {
-            ...prev,
-            event_category_slugs: newSlugs.filter(
-              (slug) => slug !== category && !tag.items.includes(slug)
-            ),
-          };
-        }
-      });
-    } else {
-      // Handle individual item
-      setFormData((prev) => {
-        if (checked && !prev.event_category_slugs.includes(category)) {
-          return {
-            ...prev,
-            event_category_slugs: [...prev.event_category_slugs, category],
-          };
-        } else if (!checked) {
-          return {
-            ...prev,
-            event_category_slugs: prev.event_category_slugs.filter(
-              (slug) => slug !== category
-            ),
-          };
-        }
-        return prev;
-      });
-    }
-  };
-
-  const isParentChecked = (tag: any): boolean => {
-    return tag.items.every((item: any) =>
-      formData.event_category_slugs.includes(item)
-    );
-  };
-
-  const isParentIndeterminate = (tag: any): boolean => {
-    const checkedItems = tag.items.filter((item: any) =>
-      formData.event_category_slugs.includes(item)
-    );
-    return checkedItems.length > 0 && checkedItems.length < tag.items.length;
+  const handleZoomLink = async () => {
+  try {
+    const data = {
+      user_id: id,
+      email: "adnaj@gmail.com",
+      first_name: "Rolesh",
+      last_name: "A",
+    };
+    await createZoomLink.mutateAsync(data);
+  } catch (error) {
+    console.error("Submission error:", error);
+  }
   };
 
   interface FileValidationResult {
@@ -531,8 +671,12 @@ const EventModal: React.FC = () => {
       post_id: Number(formData.post_id) - 1,
       event_status: status,
       user_id: id,
+      event_location: String(placeName),
+      event_questions: questions ?? [],
+      event_category_slugs: eventCategorySlugs ?? [],
+      event_category: selectedCategory
     };
-    console.log(formData.post_id);
+    console.log("updatedData", updatedData);
 
     try {
       if (
@@ -542,54 +686,20 @@ const EventModal: React.FC = () => {
         formData.event_end_time === ""
       ) {
         if (formData.event_title === "") setEventTitle("Required!");
-        if (formData.event_start_time === "") setEventStartTime("Required!");
-        if (formData.event_end_time === "") setEventEndTime("Required!");
+        // if (formData.event_start_time === "") setEventStartTime("Required!");
+        // if (formData.event_end_time === "") setEventEndTime("Required!");
         if (formData.event_date === "") setEventDate("Required!");
         setIsLoading(false);
         toast("Required fields should be input! Please type.");
         console.log(formData);
       } else {
-        await updateEventMutation.mutate(updatedData);
-        console.log(formData);
-        console.log(updatedData);
+        await updateEventMutation.mutateAsync({
+          ...updatedData,
+          event_status: status,
+          // event_questions: questions,
+          // event_category_slugs: eventCategorySlugs
+        });
       }
-    } catch (error) {
-      console.error("Submission error:", error);
-    }
-  };
-
-  useEffect(() => {
-    // if (formData.event_is_virtual === true) {
-    //   setIsLoading(true);
-      handleZoomLink();
-    // }
-  }, []);
-
-  const createZoomLink = useMutation({
-    mutationFn: async (data: any) => createZoomLinkApi(token, data),
-    onSuccess: (res: any) => {
-      setIsLoading(false);
-      const link = res.data.data.response.start_url;
-      setFormData((prev) => ({
-        ...prev,
-        event_meeting_link: link,
-      }));
-    },
-    onError: (error: any) => {
-      setIsLoading(false);
-      console.error("Submission failed", error);
-    },
-  });
-
-  const handleZoomLink = async () => {
-    try {
-      const data = {
-        user_id: id,
-        email: "adnaj@gmail.com",
-        first_name: "Rolesh",
-        last_name: "A",
-      };
-      await createZoomLink.mutateAsync(data);
     } catch (error) {
       console.error("Submission error:", error);
     }
@@ -613,7 +723,7 @@ const EventModal: React.FC = () => {
           <div className="grid grid-cols-3 w-full m-auto gap-2">
             <div className="col-span-3 2xl:col-span-2">
               <div className="smd:grid gap-20 gap-sm-5 grid-cols-2 mt-10 px-6 w-xl-2/3 w-sm-full">
-                <div className="flex flex-col gap-5">
+                <div className="col-span-2 xl:col-span-1 flex flex-col gap-5">
                   <div className="flex gap-4 justify-between">
                     <label className="text-sm mt-2">
                     <span className="text-red-500" style={{color: "red"}}>* </span>Title
@@ -631,7 +741,7 @@ const EventModal: React.FC = () => {
                       }`}
                     />
                   </div>
-                  <div className="flex gap-15 justify-between">
+                  <div className="flex justify-between">
                     <label className="text-sm mt-2">
                       <span className="text-red-500"></span>Description
                     </label>
@@ -645,7 +755,7 @@ const EventModal: React.FC = () => {
                       className={`border w-[300px] p-2 rounded border-gray-border`}
                     />
                   </div>
-                  <div className="flex gap-15 justify-between">
+                  <div className="flex justify-between">
                     <label className="text-sm mt-2">
                     <span className="text-red-500" style={{color: "red"}}>* </span>Date
                     </label>
@@ -662,181 +772,78 @@ const EventModal: React.FC = () => {
                       }`}
                     />
                   </div>
-                  <div className="flex gap-15 justify-between">
+                  <div className="flex justify-between">
                     <label className="text-sm mt-2">
                     <span className="text-red-500" style={{color: "red"}}>* </span>Time
                     </label>
-                    <div className="flex justify-between">
-                      <input
-                        type="time"
-                        id="event_start_time"
-                        name="event_start_time"
+                    <div className="flex justify-between items-center">
+                      <TimePicker
+                        value={formData.event_start_time}
                         disabled={isPublished}
-                        value={formData.event_start_time ?? ""}
-                        onChange={(e) => {
-                          const { name, value } = e.target;
-                          setFormData((prev) => ({
-                            ...prev,
-                            [name]: value,
-                          }));
-                        }}
-                        required
-                        className={`border p-2 rounded ${
-                          eventStartTime ? "border-red-600" : "border-gray-border"
-                        } w-[130px]`}
-                      />
-                      <span className="p-3">to</span>
-                      <input
-                        type="time"
-                        id="event_end_time"
-                        name="event_end_time"
+                        onChange={(newTime) => {
+                          handleStartTimeChange(newTime);
+                        }}></TimePicker>
+                      <span className="p-3 text-sm">to</span>
+                      <TimePicker
+                        value={formData.event_end_time}
                         disabled={isPublished}
-                        value={formData.event_end_time ?? ""}
-                        onChange={handleInputChange}
-                        required
-                        className={`border p-2 rounded ${
-                          eventEndTime ? "border-red-600" : "border-gray-border"
-                        } w-[130px]`}
-                      />
+                        onChange={(newTime) => {
+                          handleEndTimeChange(newTime);
+                        }}></TimePicker>
                     </div>
                   </div>
-                  <div className="flex gap-15 justify-between">
+                  <div className="flex justify-between">
                     <label className="text-sm mt-2 w-1/3">
                       <span className="text-red-500"></span>Is this meeting
                       virtual?
                     </label>
-                    <div className="flex items-center w-full gap-4">
+                    <div className="flex items-center gap-4">
                       <div className="flex items-center w-1/2 justify-start gap-2">
                         <input
-                          type="radio"
-                          id="event_is_virtual"
-                          disabled={isPublished}
-                          name="event_is_virtual" // Same name for both radio buttons
-                          // checked={formData.event_is_virtual}
-                          checked={selected === true}
-                          onChange={() => {
-                            // setFormData((prev) => ({
-                            //   ...prev,
-                            //   event_is_virtual: e.target.checked === true,
-                            // }));
-                            setSelected(true);
-                          }}
-                          className="w-4 h-4"
+                            type="radio"
+                            id="event_is_virtual_yes"
+                            name="event_is_virtual"
+                            disabled={isPublished}
+                            value="true"
+                            checked={formData.event_is_virtual == true}
+                            onChange={() => setFormData(prev => ({ ...prev, event_is_virtual: true }))}
+                            className="w-4 h-4"
                         />
                         <span>Yes</span>
                       </div>
                       <div className="flex items-center w-1/2 justify-start gap-2">
                         <input
-                          type="radio"
-                          id="event_is_virtual"
-                          name="event_is_virtual" // Same name for both radio buttons
-                          value="disabled"
-                          // checked={!formData.event_is_virtual}
-                          checked={selected === false}
-                          disabled={isPublished}
-                          onChange={() => {
-                            setSelected(false);
-                            // setFormData((prev) => ({
-                            //   ...prev,
-                            //   event_is_virtual: e.target.checked === false,
-                            // }));
-                          }}
-                          className="w-4 h-4"
+                            type="radio"
+                            id="event_is_virtual_no"
+                            name="event_is_virtual"
+                            disabled={isPublished}
+                            value="false"
+                            checked={formData.event_is_virtual == false}
+                            onChange={() => setFormData(prev => ({ ...prev, event_is_virtual: false }))}
+                            className="w-4 h-4"
                         />
                         <span>No</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-15 justify-between">
+                  <div className="flex justify-between">
                     <label className="text-sm mt-2">
                       <span className="text-red-500"></span>Meeting Link
                     </label>
                     <input
-                      type="text"
-                      id="event_meeting_link"
-                      name="event_meeting_link"
-                      value={selected === true ? formData.event_meeting_link : ""}
-                      disabled={isPublished}
-                      onChange={handleInputChange}
-                      required
-                      readOnly
-                      className={`border w-[300px] border-gray-border p-2 rounded ${
-                        formData.event_is_virtual
-                          ? ""
-                          : "disabled:cursor-not-allowed"
-                      }`}
+                        type="text"
+                        id="event_meeting_link"
+                        name="event_meeting_link"
+                        value={formData.event_is_virtual ? formData.event_meeting_link || '' : ''}
+                        disabled={isPublished || formData.event_is_virtual == false}
+                        onChange={handleInputChange}
+                        className={`border w-[300px] border-gray-border p-2 rounded ${
+                            !formData.event_is_virtual ? 'cursor-not-allowed bg-gray-100' : ''
+                        }`}
                     />
                   </div>
-                  {/* <div className="flex gap-15 justify-between">
-                    <label className="text-sm mt-2">
-                      <span className="text-red-500"></span>Event Location
-                    </label>
-                    <div style={{ position: "relative", width: "300px" }}>
-                      <input
-                        type="text"
-                        id="event_location"
-                        name="event_location"
-                        disabled={isPublished}
-                        value={value}
-                        onChange={(e) => setValue(e.target.value)}
-                        onFocus={() => setShowSuggestions(true)}
-                        onBlur={() =>
-                          setTimeout(() => setShowSuggestions(false), 200)
-                        }
-                        required
-                        style={{
-                          width: "100%",
-                          padding: "8px",
-                          border: "1px solid #ccc",
-                          borderRadius: "4px",
-                        }}
-                        placeholder="Enter event location"
-                      />
-                      {showSuggestions && (
-                        <ul
-                          style={{
-                            position: "absolute",
-                            top: "100%",
-                            left: 0,
-                            right: 0,
-                            maxHeight: "200px",
-                            overflowY: "auto",
-                            border: "1px solid #ccc",
-                            borderTop: "none",
-                            borderRadius: "0 0 4px 4px",
-                            backgroundColor: "white",
-                            listStyle: "none",
-                            margin: 0,
-                            padding: 0,
-                            zIndex: 1,
-                          }}
-                        >
-                          {filteredAddresses.map((address) => (
-                            <li
-                              key={address}
-                              onClick={() => {
-                                setValue(address);
-                                setShowSuggestions(false);
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  event_location: address,
-                                }));
-                              }}
-                              style={{
-                                padding: "8px",
-                                cursor: "pointer",
-                              }}
-                              onMouseDown={(e) => e.preventDefault()}
-                            >
-                              {address}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div> */}
                 </div>
-                <div className="flex flex-col gap-5 mt-4 lg:mt-0">
+                <div className="col-span-2 xl:col-span-1 flex flex-col gap-5 mt-4 lg:mt-0">
                   <div className="flex gap-15 justify-between">
                     <label className="text-sm mt-2">
                       <span className="text-red-500"></span>Member(s)
@@ -925,69 +932,85 @@ const EventModal: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="pt-6 mx-6 ">
-                <div className="input-container mb-6  flex justify-start items-center" style={{ marginTop: "20px", position: "relative" }}>
-                  <label htmlFor="location-input"  className="text-sm mt-2 w-1/6">Event Location:</label>
-                  <input
-                    disabled={isPublished}
-                    type="text"
-                    id="event_location"
-                    name="event_location"
-                    // value={value}
-                    // onChange={(e) => {
-                    //   setValue(e.target.value);
-                    // }}
-                    value={isMapLoading ? "Loading...": placeName}
-                    onChange={handleMapInputChange}
-                    placeholder="Type to search or click on the map"
-                    className="border w-[300px] border-gray-border p-2 rounded"
-                  />
-                  {suggestions.length > 0 && (
-                    <ul
-                      className="suggestions"
-                      style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        right: 0,
-                        backgroundColor: "white",
-                        border: "1px solid #ccc",
-                        borderTop: "none",
-                        maxHeight: "200px",
-                        overflowY: "auto",
-                        zIndex: 1000,
-                        listStyle: "none",
-                        padding: 0,
-                        margin: 0,
-                      }}
-                    >
-                      {suggestions.map((suggestion) => (
-                        <li
-                          key={suggestion.place_id}
-                          onClick={() => handleSuggestionClick(suggestion)}
-                          style={{
-                            padding: "5px",
-                            cursor: "pointer",
-                            borderBottom: "1px solid #eee",
-                          }}
-                        >
-                          {suggestion.display_name}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+              <div className="pt-6 mx-6">
+                <div
+                  className="input-container mb-6 flex justify-start items-center"
+                  style={{ marginTop: "20px", position: "relative" }}
+                >
+                  <label htmlFor="location-input" className="text-sm mt-2 w-1/6">
+                    Event Location:
+                  </label>
+                  <div className="flex flex-col w-[300px] relative">
+                    <input
+                      type="text"
+                      id="event_location"
+                      name="event_location"
+                      disabled={isPublished}
+                      value={isMapLoading ? "Loading..." : placeName}
+                      onChange={handleMapInputChange}
+                      placeholder="Type to search or click on the map"
+                      className="border border-gray-200 p-2 rounded-md w-full focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none transition-colors duration-200"
+                    />
+                    
+                    {/* Suggestions dropdown */}
+                    {suggestions.length > 0 && (
+                      <ul
+                        className="absolute w-full bg-white mt-[40px] rounded-md shadow-sm border border-gray-100 max-h-[250px] overflow-y-auto z-[1000]"
+                      >
+                        {suggestions.map((suggestion) => (
+                          <li
+                            key={suggestion.place_id}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            className="border-b border-gray-50 last:border-b-0"
+                          >
+                            <div className="flex items-start p-3 hover:bg-gray-50 cursor-pointer transition-colors duration-150">
+                              <svg 
+                                className="w-4 h-4 mt-0.5 mr-2 text-gray-300 flex-shrink-0" 
+                                fill="none" 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth="2" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor"
+                              >
+                                <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <span className="text-sm text-gray-600 truncate">
+                                {suggestion.display_name}
+                              </span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
+
+                {/* Map section */}
                 <div className="map-selector">
-                  <div className="map-container"  style={{ height: "400px", width: "100%" }}>
-                    <MapContainer 
-                    center={center} zoom={13}
-                    style={{ height: "100%", width: "100%" }}>
+                  <div
+                    className="map-container"
+                    style={{ height: "400px", width: "100%" }}
+                  >
+                    <MapContainer
+                      center={initialCenter}
+                      zoom={13}
+                      style={{ height: "100%", width: "100%" }}
+                    >
                       <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       />
                       <MapEvents onLocationSelected={handleLocationSelected} />
-                      {selectedLocation && <Marker position={[selectedLocation.lat, selectedLocation.lng]} />}
+                      {selectedLocation && (
+                        <Marker
+                          position={[
+                            selectedLocation.lat,
+                            selectedLocation.lng,
+                          ]}
+                        />
+                      )}
                     </MapContainer>
                   </div>
                 </div>
@@ -1035,85 +1058,43 @@ const EventModal: React.FC = () => {
                   </div>
                   <div
                     className="grid grid-cols-3 gap-6 w-full max-h-[500px] overflow-y-auto pt-2
-      scrollbar scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100
-      hover:scrollbar-thumb-gray-500 px-4"
+                    scrollbar scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100
+                    hover:scrollbar-thumb-gray-500 px-4"
                   >
-                    {meetingTags.map((tag, index) => (
-                      <div
-                        key={index}
-                        className="col-span-1 2xl:col-span-3 bg-white rounded-lg shadow-sm mb-4 p-4"
-                      >
-                        <div className="flex flex-col">
-                          <label className="flex items-center gap-2 mb-3 cursor-pointer hover:bg-gray-50 p-2 rounded-md">
-                            <input
-                              type="checkbox"
-                              disabled={isPublished}
-                              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              checked={isParentChecked(tag)}
-                              ref={(input) => {
-                                if (input) {
-                                  input.indeterminate =
-                                    isParentIndeterminate(tag);
-                                }
-                              }}
-                              onChange={(e) =>
-                                handleCategoryChange(
-                                  tag.category,
-                                  e.target.checked
-                                )
-                              }
-                              aria-label={
-                                isParentChecked(tag) ? "Uncheck all" : "Check all"
-                              }
-                            />
-                            <span className="text-sm font-medium text-gray-700">
-                              {tag.category}
-                            </span>
+                    {meetingTags.map((category: any) => (
+                      <div key={category.id} className="col-span-1 2xl:col-span-3 space-y-4 rounded-lg border p-4">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={category.id}
+                            disabled={isPublished}
+                            checked={selectedCategory === category.id}
+                            onChange={() => handleCategoryChange(category.id)}
+                          />
+                          <label htmlFor={category.id} className="font-medium">
+                            {category.label}
                           </label>
-
-                          <div className="ml-6 border-l-2 border-gray-100 pl-4">
-                            <div
-                              className={
-                                index === 0
-                                  ? "grid grid-cols-1 xl:grid-cols-2 gap-3 "
-                                  : "flex flex-col gap-2"
-                              }
-                            >
-                              {tag.items.map((item, idx) => (
-                                <label
-                                  key={idx}
-                                  className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md"
-                                >
-                                  <input
-                                    disabled={isPublished}
-                                    type="checkbox"
-                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                    checked={formData.event_category_slugs.includes(
-                                      item
-                                    )}
-                                    onChange={(e) =>
-                                      handleCategoryChange(item, e.target.checked)
-                                    }
-                                    aria-label={
-                                      formData.event_category_slugs.includes(item)
-                                        ? `Uncheck ${item}`
-                                        : `Check ${item}`
-                                    }
-                                  />
-                                  <span className="text-sm text-gray-600">
-                                    {item}
-                                  </span>
-                                </label>
-                              ))}
+                        </div>
+                        <div className="ml-6 space-y-3 border-l pl-4">
+                          {category.subcategories.map((sub: any) => (
+                            <div key={sub.id} className="flex items-center space-x-2">
+                              <input 
+                                type="checkbox"
+                                id={sub.id}
+                                disabled={isPublished}
+                                checked={selectedSubcategories.includes(sub.id)}
+                                onChange={() => handleSubcategoryChange(sub.id, category.id)}
+                              />
+                              <label htmlFor={sub.id}>{sub.label}</label>
                             </div>
-                          </div>
+                          ))}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div className="flex gap-2 justify-around mt-8 m-auto px-8">
-                  {isDraft === "draft" ? (
+                  {isPublished === false ? (
                     <>
                       <button
                         name="updateandpublish"

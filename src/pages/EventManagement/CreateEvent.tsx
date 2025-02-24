@@ -14,80 +14,37 @@ import { Pencil, Trash2, Plus, X, Check } from "lucide-react";
 import { createZoomLinkApi } from "../../services/events";
 import LoadingScreen from "../../components/LoadingScreen";
 
-export const usAddresses = [
-  "321 Pine Rd, Houston, TX 77001",
-  "654 Maple Dr, Miami, FL 33101",
-  "987 Cedar Ln, Seattle, WA 98101",
-  "246 Birch Ct, Boston, MA 02101",
-  "135 Willow Way, San Francisco, CA 94101",
-  "864 Spruce St, Denver, CO 80201",
-  "753 Ash Ave, Atlanta, GA 30301",
-  "951 Oakwood Blvd, Dallas, TX 75201",
-  "357 Pinecrest Rd, Phoenix, AZ 85001",
-  "159 Elmwood Ave, Philadelphia, PA 19101",
-  "753 Maplewood Dr, San Diego, CA 92101",
-  "852 Cedarwood Ln, Austin, TX 78701",
-  "741 Birchwood Ct, Portland, OR 97201",
-  "963 Willowbrook Rd, Las Vegas, NV 89102",
-  "852 Sprucewood Ave, Nashville, TN 37201",
-  "147 Oakridge Dr, San Antonio, TX 78201",
-  "369 Mapleleaf Ln, Charlotte, NC 28201",
-  "258 Pinegrove Rd, Columbus, OH 43201",
-  "741 Cedargrove Ave, Indianapolis, IN 46201",
-  "963 Birchgrove Ct, Fort Worth, TX 76101",
-  "852 Willowgrove Dr, Detroit, MI 48201",
-  "147 Ashwood Rd, El Paso, TX 79901",
-  "369 Oakleaf Ave, Memphis, TN 38101",
-  "258 Maplegrove Ln, Baltimore, MD 21201",
-  "741 Cedarleaf Rd, Boston, MA 02201",
-  "963 Pineleaf Ave, Seattle, WA 98201",
-  "852 Birchleaf Dr, Washington, DC 20001",
-  "147 Willowleaf Ct, Denver, CO 80301",
-  "369 Ashleaf Rd, Nashville, TN 37301",
-  "258 Oakgrove Ave, Louisville, KY 40201",
-  "741 Maplewood Ln, Milwaukee, WI 53201",
-  "963 Cedarwood Rd, Albuquerque, NM 87101",
-  "852 Pinewood Ave, Tucson, AZ 85701",
-  "147 Birchwood Ln, Fresno, CA 93701",
-  "369 Willowwood Rd, Sacramento, CA 95801",
-  "258 Ashwood Ave, Long Beach, CA 90801",
-  "741 Oakwood Ln, Kansas City, MO 64101",
-  "963 Mapleleaf Rd, Mesa, AZ 85201",
-  "852 Cedarleaf Ave, Atlanta, GA 30301",
-  "147 Pineleaf Ln, Virginia Beach, VA 23451",
-  "369 Birchleaf Rd, Omaha, NE 68101",
-  "258 Willowleaf Ave, Colorado Springs, CO 80901",
-  "741 Ashleaf Ln, Raleigh, NC 27601",
-  "963 Oakgrove Rd, Miami, FL 33101",
-  "852 Maplegrove Ave, Oakland, CA 94601",
-  "147 Cedargrove Ln, Minneapolis, MN 55401",
-  "369 Pinegrove Rd, Tulsa, OK 74101",
-];
 
-// import { useState, useEffect, useRef } from "react"
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
-import { LatLngExpression } from "leaflet";
-const center: LatLngExpression = [51.505, -0.09];
+// import { LatLngExpression } from "leaflet";
+// const center: LatLngExpression = [51.505, -0.09];
 import "leaflet/dist/leaflet.css";
-// import L from "leaflet"
-
-// delete L.Icon.Default.prototype._getIconUrl
-// L.Icon.Default.mergeOptions({
-//   iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-icon-2x.png",
-//   iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-icon.png",
-//   shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.3.1/images/marker-shadow.png",
-// })
-
+import { TimePicker } from "../../components/TimePicker";
+//For Map
 interface Location {
   lat: number;
   lng: number;
 }
+
+const defaultLocation = {
+  lat: 34.0522,
+  lng: -118.2437,
+  address: "Los Angeles, CA 90012"
+};
 
 interface Suggestion {
   place_id: number;
   display_name: string;
   lat: string;
   lon: string;
+  address?: {
+    house_number?: string;
+    road?: string;
+    city?: string;
+    municipality?: string;
+    state?: string;
+    postcode?: string;
+  };
 }
 
 function MapEvents({
@@ -103,20 +60,38 @@ function MapEvents({
   return null;
 }
 
-const CreateEvent: React.FC = () => {
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(
-    null
-  );
-  const [placeName, setPlaceName] = useState("");
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isMapLoading, setMapLoading] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [value, setValue] = useState("");
-  const [filteredAddresses, setFilteredAddresses] = useState(usAddresses);
 
+const CreateEvent: React.FC = () => {
+  
+  //For Map
+  const [isMapLoading, setMapLoading] = useState(false);
+  // const [center, setCenter] = useState<[number, number]>([defaultLocation.lat, defaultLocation.lng]);
+  const initialCenter: [number, number] = [defaultLocation.lat, defaultLocation.lng];
+  const [selectedLocation, setSelectedLocation] = useState<Location>({
+    lat: defaultLocation.lat,
+    lng: defaultLocation.lng
+  });
+  useEffect(() => {
+    handleDefaultLocation();
+  }, []);
+
+  const handleDefaultLocation = async (): Promise<void> => {
+    setMapLoading(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${defaultLocation.lat}&lon=${defaultLocation.lng}`
+      );
+      const data = await response.json();
+      const formattedAddress = formatAddress(data.address);
+      setPlaceName(formattedAddress);
+    } catch (error) {
+      console.error("Error setting default location:", error);
+      setPlaceName(defaultLocation.address);
+    }
+    setMapLoading(false);
+  };
   const handleLocationSelected = async (location: Location) => {
-    console.log(filteredAddresses)
+    // console.log(filteredAddresses)
     setSelectedLocation(location);
     setMapLoading(true);
     try {
@@ -146,7 +121,7 @@ const CreateEvent: React.FC = () => {
 
   const handleMapInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setValue(e.target.value);
+    // setValue(e.target.value);
     setPlaceName(value);
 
     if (timeoutRef.current) {
@@ -173,8 +148,7 @@ const CreateEvent: React.FC = () => {
   };
 
   const handleSuggestionClick = (suggestion: Suggestion) => {
-    // setValue(suggestion);
-    // alert(suggestion);
+  
     setPlaceName(suggestion.display_name);
     setSelectedLocation({
       lat: Number.parseFloat(suggestion.lat),
@@ -191,18 +165,82 @@ const CreateEvent: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (value) {
-      setFilteredAddresses(
-        usAddresses.filter((address) =>
-          address.toLowerCase().includes(value.toLowerCase())
-        )
-      );
-    } else {
-      setFilteredAddresses(usAddresses);
-    }
-  }, [value]);
 
+  const formatAddress = (address: Suggestion['address']): string => {
+    if (!address) return defaultLocation.address;
+    
+    const components: string[] = [];
+    
+    if (address.house_number) components.push(address.house_number);
+    if (address.road) components.push(address.road);
+    if (address.city || address.municipality) components.push((address.city || address.municipality) as string);
+    if (address.state) components.push(address.state);
+    if (address.postcode) components.push(address.postcode);
+    
+    return components.join(", ") || defaultLocation.address;
+  };
+  
+  //For Meeting tags
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [selectedSubcategories, setSelectedSubcategories] = useState<string[]>([])
+  // const [eventCategorySlugs, setEventCategorySlugs] = useState<string[]>(initialEventCategorySlugs)
+  const [eventCategorySlugs, setEventCategorySlugs] = useState<string[]>([])
+ 
+  const handleCategoryChange = (categoryId: string) => {
+    if (selectedCategory === categoryId) {
+      setSelectedCategory(null)
+      setSelectedSubcategories([])
+      setEventCategorySlugs([])
+    } else {
+      setSelectedCategory(categoryId)
+      const category = meetingTags.find((cat: any) => cat.id === categoryId)
+      if (category) {
+        const allSubcategories = category.subcategories.map((sub: any) => sub.id)
+        setSelectedSubcategories(allSubcategories)
+        setEventCategorySlugs(category.subcategories.map((sub: any) => sub.slug))
+      }
+    }
+  }
+
+  const handleSubcategoryChange = (subcategoryId: string, categoryId: string) => {
+    const category = meetingTags.find((cat: any) => cat.id === categoryId)
+    if (!category) return
+
+    if (selectedCategory === categoryId) {
+      setSelectedSubcategories((prev) => {
+        const newSelectedSubcategories = prev.includes(subcategoryId)
+          ? prev.filter((id) => id !== subcategoryId)
+          : [...prev, subcategoryId]
+
+        const newEventCategorySlugs = category.subcategories
+          .filter((sub: any) => newSelectedSubcategories.includes(sub.id))
+          .map((sub: any) => sub.slug)
+
+        setEventCategorySlugs(newEventCategorySlugs)
+        return newSelectedSubcategories
+      })
+    } else {
+      setSelectedCategory(categoryId)
+      setSelectedSubcategories([subcategoryId])
+      const subcategory = category.subcategories.find((sub: any) => sub.id === subcategoryId)
+      setEventCategorySlugs(subcategory ? [subcategory.slug] : [])
+    }
+    setFormData(
+      (prev) => ({
+        ...prev,
+        event_category_slugs: eventCategorySlugs
+      }));
+  }
+
+  const [placeName, setPlaceName] = useState("");
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // const [value, setValue] = useState("");
+  // console.log(value);
+  // const [filteredAddresses, setFilteredAddresses] = useState(usAddresses);
+
+  //For Questions
   const [questions, setQuestions] = useState<Question[]>([]);
 
   const [newQuestion, setNewQuestion] = useState({
@@ -293,6 +331,7 @@ const CreateEvent: React.FC = () => {
     event_modify_event: false,
     event_invite_others: false,
     event_view_member_list: false,
+    event_category: "",
     event_category_slugs: [],
     post_id: null,
     event_featured: false,
@@ -303,9 +342,8 @@ const CreateEvent: React.FC = () => {
   const [fileName, setFileName] = useState("No file chosen");
   const [eventTitle, setEventTitle] = useState("");
   const [eventDate, setEventDate] = useState("");
-  const [eventStartTime, setEventStartTime] = useState("");
-  const [eventEndTime, setEventEndTime] = useState("");
-  const [selected, setSelected] = useState("");
+  // const [eventStartTime, setEventStartTime] = useState("");
+  // const [eventEndTime, setEventEndTime] = useState("");
   // const [isLoading, setIsLoading] = useState(false);
 
   const handleFileButtonClick = () => {
@@ -314,18 +352,40 @@ const CreateEvent: React.FC = () => {
     }
   };
 
+  const handleStartTimeChange = (newTime: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      event_start_time:
+        newTime
+    })); 
+  }
+  const handleEndTimeChange = (newTime: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      event_end_time:
+        newTime
+    })); 
+  }
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
     const { name, value, type } = e.target;
-    // console.log(name, value, type);
     setFormData((prev) => ({
       ...prev,
       [name]:
         type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+    })); 
+
+    if (name === "event_description" && formData.event_description.length <= maxLength) {
+      return;
+    }
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value, // Update the correct field dynamically
     }));
+    
   };
 
   const handleRecurringChange = (isRecurring: boolean) => {
@@ -346,11 +406,8 @@ const CreateEvent: React.FC = () => {
   };
 
   useEffect(() => {
-    // if (formData.event_is_virtual === true) {
-    // setMapLoading(true)
     handleZoomLink();
-    // }
-  }, [formData.event_is_virtual]);
+  }, []);
 
   const createZoomLink = useMutation({
     mutationFn: async (data: any) => createZoomLinkApi(token, data),
@@ -380,66 +437,6 @@ const CreateEvent: React.FC = () => {
     } catch (error) {
       console.error("Submission error:", error);
     }
-  };
-
-  const handleCategoryChange = (category: string, checked: boolean) => {
-    const tag = meetingTags.find((t) => t.category === category);
-
-    if (tag) {
-      setFormData((prev) => {
-        const newSlugs = [...prev.event_category_slugs];
-
-        if (checked) {
-          // Add category and all its items
-          const itemsToAdd = [category, ...tag.items].filter(
-            (item) => !newSlugs.includes(item)
-          );
-          return {
-            ...prev,
-            event_category_slugs: [...newSlugs, ...itemsToAdd],
-          };
-        } else {
-          // Remove category and all its items
-          return {
-            ...prev,
-            event_category_slugs: newSlugs.filter(
-              (slug) => slug !== category && !tag.items.includes(slug)
-            ),
-          };
-        }
-      });
-    } else {
-      // Handle individual item
-      setFormData((prev) => {
-        if (checked && !prev.event_category_slugs.includes(category)) {
-          return {
-            ...prev,
-            event_category_slugs: [...prev.event_category_slugs, category],
-          };
-        } else if (!checked) {
-          return {
-            ...prev,
-            event_category_slugs: prev.event_category_slugs.filter(
-              (slug) => slug !== category
-            ),
-          };
-        }
-        return prev;
-      });
-    }
-  };
-
-  const isParentChecked = (tag: any): boolean => {
-    return tag.items.every((item: any) =>
-      formData.event_category_slugs.includes(item)
-    );
-  };
-
-  const isParentIndeterminate = (tag: any): boolean => {
-    const checkedItems = tag.items.filter((item: any) =>
-      formData.event_category_slugs.includes(item)
-    );
-    return checkedItems.length > 0 && checkedItems.length < tag.items.length;
   };
 
   interface FileValidationResult {
@@ -492,7 +489,7 @@ const CreateEvent: React.FC = () => {
 
     if (!validationResult.isValid) {
       toast(validationResult.error ?? "An error occurred");
-      event.target.value = "";
+      // event.target.value = "";
       setImagePreview(null);
       return;
     }
@@ -526,7 +523,7 @@ const CreateEvent: React.FC = () => {
     } catch (error) {
       console.error("Error processing file:", error);
       alert("Error processing file. Please try again.");
-      event.target.value = "";
+      // event.target.value = "";
       setImagePreview(null);
     }
   };
@@ -547,6 +544,7 @@ const CreateEvent: React.FC = () => {
   });
 
   const handleSubmit = async (status: "publish" | "draft") => {
+    // handleSave();
     setIsLoading(true);
     try {
       if (
@@ -556,8 +554,8 @@ const CreateEvent: React.FC = () => {
         formData.event_end_time === ""
       ) {
         if (formData.event_title === "") setEventTitle("Required!");
-        if (formData.event_start_time === "") setEventStartTime("Required!");
-        if (formData.event_end_time === "") setEventEndTime("Required!");
+        // if (formData.event_start_time === "") setEventStartTime("Required!");
+        // if (formData.event_end_time === "") setEventEndTime("Required!");
         if (formData.event_date === "") setEventDate("Required!");
 
         toast("Required fields should be input! Please type.");
@@ -570,13 +568,16 @@ const CreateEvent: React.FC = () => {
           event_status: status,
           event_questions: questions,
           event_location: placeName,
+          event_category_slugs: eventCategorySlugs,
+          event_category: selectedCategory
         });
-        navigate("/eventManagement");
       }
     } catch (error) {
       console.error("Submission error:", error);
     }
   };
+
+  const maxLength = 200;
 
   return (
     <>
@@ -585,11 +586,10 @@ const CreateEvent: React.FC = () => {
       ) : (
         <div>
           <h2 className="pl-[30px] pt-[30px] font-bold">Create New Event</h2>
-          {/* <div className="2xl:flex-row flex-col justify-between items-center w-full m-auto gap-2"> */}
           <div className="grid grid-cols-3 w-full m-auto gap-2">
             <div className="col-span-3 2xl:col-span-2">
-              <div className="smd:grid gap-20 gap-sm-5 grid-cols-2 mt-10 px-6 w-xl-2/3 w-sm-full">
-                <div className="flex flex-col gap-5">
+              <div className="grid gap-20 gap-sm-5 grid-cols-2 mt-10 px-6 w-xl-2/3 w-sm-full">
+                <div className="col-span-2 xl:col-span-1 flex flex-col gap-5">
                   <div className="flex gap-4 justify-between">
                     <label className="text-sm mt-2">
                       <span className="text-red-500" style={{ color: "red" }}>
@@ -609,20 +609,27 @@ const CreateEvent: React.FC = () => {
                       }`}
                     />
                   </div>
-                  <div className="flex gap-15 justify-between">
+                  <div className="flex justify-between">
                     <label className="text-sm mt-2">
                       <span className="text-red-500"></span>Description
                     </label>
+                    <div>
                     <textarea
                       id="event_description"
                       name="event_description"
                       value={formData.event_description}
+                      placeholder="Type here... (Max 200 characters)"
+                      maxLength={200}
                       onChange={handleInputChange}
                       required
-                      className={`border w-[300px] p-2 rounded border-gray-border`}
+                      className={`border w-[300px] h-[150px] p-2 rounded border-gray-border`}
                     />
+                    {formData.event_description.length < maxLength ?
+                    <p style={{color: "gray"}}>{maxLength - formData.event_description.length} characters left</p>
+                    : <p style={{ color: "red" }}>Character limit exceeded!</p>}
+                    </div>
                   </div>
-                  <div className="flex gap-15 justify-between">
+                  <div className="flex justify-between">
                     <label className="text-sm mt-2">
                       <span className="text-red-500" style={{ color: "red" }}>
                         *{" "}
@@ -633,7 +640,7 @@ const CreateEvent: React.FC = () => {
                       type="date"
                       id="event_date"
                       name="event_date"
-                      value={formData.event_date ?? ""}
+                      value = {formData.event_date ?? ''}
                       onChange={handleInputChange}
                       required
                       className={`border w-[300px] p-2 rounded ${
@@ -641,186 +648,75 @@ const CreateEvent: React.FC = () => {
                       }`}
                     />
                   </div>
-                  <div className="flex gap-15 justify-between">
+                  <div className="flex justify-between">
                     <label className="text-sm mt-2">
                       <span className="text-red-500" style={{ color: "red" }}>
                         *{" "}
                       </span>
                       Time
                     </label>
-                    <div className="flex justify-between">
-                      <input
-                        type="time"
-                        id="event_start_time"
-                        name="event_start_time"
-                        value={formData.event_start_time ?? ""}
-                        onChange={(e) => {
-                          const { name, value } = e.target;
-                          setFormData((prev) => ({
-                            ...prev,
-                            [name]: value,
-                          }));
-                        }}
-                        required
-                        className={`border p-2 rounded ${
-                          eventStartTime
-                            ? "border-red-600"
-                            : "border-gray-border"
-                        } w-[130px]`}
-                      />
-                      <span className="p-3">to</span>
-                      <input
-                        type="time"
-                        id="event_end_time"
-                        name="event_end_time"
-                        value={formData.event_end_time ?? ""}
-                        onChange={handleInputChange}
-                        required
-                        className={`border p-2 rounded ${
-                          eventEndTime ? "border-red-600" : "border-gray-border"
-                        } w-[130px]`}
-                      />
+                    <div className="flex justify-between items-center">
+                      <TimePicker value={formData.event_start_time}
+                        onChange={(newTime) => {
+                          handleStartTimeChange(newTime);
+                        }}></TimePicker>
+                      <span className="p-3 text-sm">to</span>
+                      <TimePicker value={formData.event_end_time}
+                        onChange={(newTime) => {
+                          handleEndTimeChange(newTime);
+                        }}></TimePicker>
                     </div>
                   </div>
-                  <div className="flex gap-15 justify-between">
+                  <div className="flex justify-between">
                     <label className="text-sm mt-2 w-1/3">
                       <span className="text-red-500"></span>Is this meeting
                       virtual?
                     </label>
-                    <div className="flex items-center w-full gap-4">
+                    <div className="flex items-center gap-4">
                       <div className="flex items-center w-1/2 justify-start gap-2">
                         <input
-                          type="radio"
-                          id="event_is_virtual"
-                          name="event_is_virtual" // Same name for both radio buttons
-                          checked={selected === "yes"}
-                          // checked={formData.event_is_virtual}
-                          onChange={() => {
-                            setSelected("yes");
-                            // setFormData((prev) => ({
-                            //   ...prev,
-                            //   event_is_virtual: e.target.checked === true,
-                            // }));
-                          }}
-                          className="w-4 h-4"
+                            type="radio"
+                            id="event_is_virtual_yes"
+                            name="event_is_virtual"
+                            value="true"
+                            checked={formData.event_is_virtual == true}
+                            onChange={() => setFormData(prev => ({ ...prev, event_is_virtual: true }))}
+                            className="w-4 h-4"
                         />
                         <span>Yes</span>
                       </div>
                       <div className="flex items-center w-1/2 justify-start gap-2">
                         <input
-                          type="radio"
-                          id="event_is_virtual"
-                          name="event_is_virtual" // Same name for both radio buttons
-                          value="disabled"
-                          checked={selected === "no"}
-                          onChange={() => {
-                            setSelected("no");
-                            // setFormData((prev) => ({
-                            //   ...prev,
-                            //   event_is_virtual: e.target.checked === false,
-                            // }));
-                          }}
-                          className="w-4 h-4"
+                            type="radio"
+                            id="event_is_virtual_no"
+                            name="event_is_virtual"
+                            value="false"
+                            checked={formData.event_is_virtual == false}
+                            onChange={() => setFormData(prev => ({ ...prev, event_is_virtual: false }))}
+                            className="w-4 h-4"
                         />
                         <span>No</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-15 justify-between">
+                  <div className="flex justify-between">
                     <label className="text-sm mt-2">
                       <span className="text-red-500"></span>Meeting Link
                     </label>
-                    <input
-                      type="text"
-                      id="event_meeting_link"
-                      name="event_meeting_link"
-                      readOnly
-                      value={
-                        selected === "yes" ? formData.event_meeting_link : ""
-                      }
-                      disabled={!formData.event_is_virtual}
-                      onChange={handleInputChange}
-                      required
-                      className={`border w-[300px] border-gray-border p-2 rounded ${
-                        formData.event_is_virtual
-                          ? ""
-                          : "disabled:cursor-not-allowed"
-                      }`}
-                    />
-                  </div>
-                  {/* <div className="flex gap-15 justify-between">
-                    <label className="text-sm mt-2">
-                      <span className="text-red-500"></span>Event Location
-                    </label>
-                    <div style={{ position: "relative", width: "300px" }}>
                       <input
                         type="text"
-                        id="event_location"
-                        name="event_location"
-                        value={value}
-                        onChange={(e) => {
-                          setValue(e.target.value);
-                        }}
-                        onFocus={() => {
-                          setShowSuggestions(true);
-                        }}
-                        onBlur={() =>
-                          setTimeout(() => setShowSuggestions(false), 200)
-                        }
-                        required
-                        style={{
-                          width: "100%",
-                          padding: "8px",
-                          border: "1px solid #ccc",
-                          borderRadius: "4px",
-                        }}
-                        placeholder="Enter event location"
-                      />
-                      {showSuggestions && (
-                        <ul
-                          style={{
-                            position: "absolute",
-                            top: "100%",
-                            left: 0,
-                            right: 0,
-                            maxHeight: "200px",
-                            overflowY: "auto",
-                            border: "1px solid #ccc",
-                            borderTop: "none",
-                            borderRadius: "0 0 4px 4px",
-                            backgroundColor: "white",
-                            listStyle: "none",
-                            margin: 0,
-                            padding: 0,
-                            zIndex: 1,
-                          }}
-                        >
-                          {filteredAddresses.map((address) => (
-                            <li
-                              key={address}
-                              onClick={() => {
-                                setValue(address);
-                                setShowSuggestions(false);
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  event_location: address,
-                                }));
-                              }}
-                              style={{
-                                padding: "8px",
-                                cursor: "pointer",
-                              }}
-                              onMouseDown={(e) => e.preventDefault()}
-                            >
-                              {address}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                  </div> */}
+                        id="event_meeting_link"
+                        name="event_meeting_link"
+                        value={formData.event_is_virtual ? formData.event_meeting_link || '' : ''}
+                        disabled={!formData.event_is_virtual}
+                        onChange={handleInputChange}
+                        className={`border w-[300px] border-gray-border p-2 rounded ${
+                            !formData.event_is_virtual ? 'cursor-not-allowed bg-gray-100' : ''
+                        }`}
+                    />
+                  </div>
                 </div>
-                <div className="flex flex-col gap-5 mt-4 lg:mt-0">
+                <div className="col-span-2 xl:col-span-1 flex flex-col gap-5 mt-4 lg:mt-0">
                   <div className="flex gap-15 justify-between">
                     <label className="text-sm mt-2">
                       <span className="text-red-500"></span>Member(s)
@@ -903,73 +799,68 @@ const CreateEvent: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="pt-6 mx-6 ">
+              <div className="pt-6 mx-6">
                 <div
-                  className="input-container mb-6  flex justify-start items-center"
+                  className="input-container mb-6 flex justify-start items-center"
                   style={{ marginTop: "20px", position: "relative" }}
                 >
-                  <label
-                    htmlFor="location-input"
-                    className="text-sm mt-2 w-1/6"
-                  >
+                  <label htmlFor="location-input" className="text-sm mt-2 w-1/6">
                     Event Location:
                   </label>
-                  <input
-                    // id="location-input"
-                    type="text"
-                    id="event_location"
-                    name="event_location"
-                    // value={value}
-                    // onChange={(e) => {
-                    //   setValue(e.target.value);
-                    // }}
-                    value={isMapLoading ? "Loading..." : placeName}
-                    onChange={handleMapInputChange}
-                    placeholder="Type to search or click on the map"
-                    className="border w-[300px] border-gray-border p-2 rounded"
-                  />
-                  {suggestions.length > 0 && (
-                    <ul
-                      className="suggestions"
-                      style={{
-                        position: "absolute",
-                        top: "100%",
-                        left: 0,
-                        right: 0,
-                        backgroundColor: "white",
-                        border: "1px solid #ccc",
-                        borderTop: "none",
-                        maxHeight: "200px",
-                        overflowY: "auto",
-                        zIndex: 1000,
-                        listStyle: "none",
-                        padding: 0,
-                        margin: 0,
-                      }}
-                    >
-                      {suggestions.map((suggestion) => (
-                        <li
-                          key={suggestion.place_id}
-                          onClick={() => handleSuggestionClick(suggestion)}
-                          style={{
-                            padding: "5px",
-                            cursor: "pointer",
-                            borderBottom: "1px solid #eee",
-                          }}
-                        >
-                          {suggestion.display_name}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <div className="flex flex-col w-[300px] relative">
+                    <input
+                      type="text"
+                      id="event_location"
+                      name="event_location"
+                      value={isMapLoading ? "Loading..." : placeName}
+                      onChange={handleMapInputChange}
+                      placeholder="Type to search or click on the map"
+                      className="border border-gray-200 p-2 rounded-md w-full focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none transition-colors duration-200"
+                    />
+                    
+                    {/* Suggestions dropdown */}
+                    {suggestions.length > 0 && (
+                      <ul
+                        className="absolute w-full bg-white mt-[40px] rounded-md shadow-sm border border-gray-100 max-h-[250px] overflow-y-auto z-[1000]"
+                      >
+                        {suggestions.map((suggestion) => (
+                          <li
+                            key={suggestion.place_id}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            className="border-b border-gray-50 last:border-b-0"
+                          >
+                            <div className="flex items-start p-3 hover:bg-gray-50 cursor-pointer transition-colors duration-150">
+                              <svg 
+                                className="w-4 h-4 mt-0.5 mr-2 flex-shrink-0" 
+                                fill="none" 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth="2" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor"
+                              >
+                                <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <span className="text-sm truncate">
+                                {suggestion.display_name}
+                              </span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
+
+                {/* Map section */}
                 <div className="map-selector">
                   <div
                     className="map-container"
                     style={{ height: "400px", width: "100%" }}
                   >
                     <MapContainer
-                      center={center}
+                      center={initialCenter}
                       zoom={13}
                       style={{ height: "100%", width: "100%" }}
                     >
@@ -991,7 +882,6 @@ const CreateEvent: React.FC = () => {
                 </div>
               </div>
             </div>
-
             <div className="col-span-3 mt-8 2xl:mt-0 2xl:col-span-1">
               <div className="w-full">
                 <h5 className="font-semibold text-lg mb-4 text-center">
@@ -1030,85 +920,41 @@ const CreateEvent: React.FC = () => {
                       </span>
                     </div>
                   </div>
-                  <div
+                  {/* <div
                     className="grid grid-cols-3 gap-6 w-full max-h-[500px] overflow-y-auto pt-2
                       scrollbar scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100
                       hover:scrollbar-thumb-gray-500 px-4"
+                  > */}
+                  <div
+                    className="grid grid-cols-3 gap-6 w-full overflow-y-auto pt-2
+                      scrollbar scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100
+                      hover:scrollbar-thumb-gray-500 px-4"
                   >
-                    {meetingTags.map((tag, index) => (
-                      <div
-                        key={index}
-                        className="col-span-1 2xl:col-span-3 bg-white rounded-lg shadow-sm mb-4 p-4"
-                      >
-                        <div className="flex flex-col">
-                          <label className="flex items-center gap-2 mb-3 cursor-pointer hover:bg-gray-50 p-2 rounded-md">
-                            <input
-                              type="checkbox"
-                              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              checked={isParentChecked(tag)}
-                              ref={(input) => {
-                                if (input) {
-                                  input.indeterminate =
-                                    isParentIndeterminate(tag);
-                                }
-                              }}
-                              onChange={(e) =>
-                                handleCategoryChange(
-                                  tag.category,
-                                  e.target.checked
-                                )
-                              }
-                              aria-label={
-                                isParentChecked(tag)
-                                  ? "Uncheck all"
-                                  : "Check all"
-                              }
-                            />
-                            <span className="text-sm font-medium text-gray-700">
-                              {tag.category}
-                            </span>
+                    {meetingTags.map((category: any) => (
+                      <div key={category.id} className="col-span-1 2xl:col-span-3 space-y-4 rounded-lg border p-4">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={category.id}
+                            checked={selectedCategory === category.id}
+                            onChange={() => handleCategoryChange(category.id)}
+                          />
+                          <label htmlFor={category.id} className="font-medium">
+                            {category.label}
                           </label>
-
-                          <div className="ml-6 border-l-2 border-gray-100 pl-4">
-                            <div
-                              className={
-                                index === 0
-                                  ? "grid grid-cols-1 xl:grid-cols-2 gap-3 "
-                                  : "flex flex-col gap-2"
-                              }
-                            >
-                              {tag.items.map((item, idx) => (
-                                <label
-                                  key={idx}
-                                  className="col-span-1 flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-md"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                    checked={formData.event_category_slugs.includes(
-                                      item
-                                    )}
-                                    onChange={(e) =>
-                                      handleCategoryChange(
-                                        item,
-                                        e.target.checked
-                                      )
-                                    }
-                                    aria-label={
-                                      formData.event_category_slugs.includes(
-                                        item
-                                      )
-                                        ? `Uncheck ${item}`
-                                        : `Check ${item}`
-                                    }
-                                  />
-                                  <span className="text-sm text-gray-600">
-                                    {item}
-                                  </span>
-                                </label>
-                              ))}
+                        </div>
+                        <div className="ml-6 space-y-3 border-l pl-4">
+                          {category.subcategories.map((sub: any) => (
+                            <div key={sub.id} className="flex items-center space-x-2">
+                              <input 
+                                type="checkbox"
+                                id={sub.id}
+                                checked={selectedSubcategories.includes(sub.id)}
+                                onChange={() => handleSubcategoryChange(sub.id, category.id)}
+                              />
+                              <label htmlFor={sub.id}>{sub.label}</label>
                             </div>
-                          </div>
+                          ))}
                         </div>
                       </div>
                     ))}
