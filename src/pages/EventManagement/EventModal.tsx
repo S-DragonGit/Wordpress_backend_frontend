@@ -722,7 +722,7 @@ const EventModal: React.FC = () => {
           <h2 className="pl-[30px] pt-[30px] font-bold">Event Details</h2>
           <div className="grid grid-cols-3 w-full m-auto gap-2">
             <div className="col-span-3 2xl:col-span-2">
-              <div className="smd:grid gap-20 gap-sm-5 grid-cols-2 mt-10 px-6 w-xl-2/3 w-sm-full">
+              <div className="grid gap-20 gap-sm-5 grid-cols-2 mt-10 px-6 w-xl-2/3 w-sm-full">
                 <div className="col-span-2 xl:col-span-1 flex flex-col gap-5">
                   <div className="flex gap-4 justify-between">
                     <label className="text-sm mt-2">
@@ -1057,7 +1057,7 @@ const EventModal: React.FC = () => {
                     </div>
                   </div>
                   <div
-                    className="grid grid-cols-3 gap-6 w-full max-h-[500px] overflow-y-auto pt-2
+                    className="grid grid-cols-3 gap-6 w-full overflow-y-auto pt-2
                     scrollbar scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100
                     hover:scrollbar-thumb-gray-500 px-4"
                   >
