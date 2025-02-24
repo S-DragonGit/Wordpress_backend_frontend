@@ -1,7 +1,7 @@
 import { CiSearch } from "react-icons/ci";
 import { icons } from "../../constants";
 import SwitcherOne from "../../components/SwitcherOne";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import SwitcherTwo from "../../components/SwitcherTwo";
 import { eventDraftedColumns, eventPublishedColumns } from "../../app/columns";
 import CalendarView from "../../components/FullCalendar";
@@ -41,10 +41,58 @@ const EventManagement = () => {
   useEffect(() => {
       setIsLoadingScreen(false);
   }, [events])
+
+  // const [updatedEventList, setUpdatedEventList] = useState(events?.data?.event_list)
   const updatedEventList = events?.data?.event_list;
   const dispatch = useDispatch();
-
   dispatch(setEvents(updatedEventList));
+
+
+  const [search, setSearch] = useState("")
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("")
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(search)
+    }, 300) // Wait 300ms after last keystroke
+
+    return () => clearTimeout(timer)
+  }, [search])
+
+  const searchInValue = useCallback((value: any, searchText: string): boolean => {
+    // Handle null or undefined
+    if (value == null) {
+      return false
+    }
+
+    // Convert to lowercase string if possible
+    const searchLower = searchText.toLowerCase()
+
+    // Handle different types
+    switch (typeof value) {
+      case "string":
+        return value.toLowerCase().includes(searchLower)
+      case "number":
+      case "boolean":
+        return value.toString().toLowerCase().includes(searchLower)
+      case "object":
+        // Handle arrays
+        if (Array.isArray(value)) {
+          return value.some((item) => searchInValue(item, searchText))
+        }
+        // Handle objects
+        return Object.values(value).some((item) => searchInValue(item, searchText))
+      default:
+        return false
+    }
+  }, [])
+
+  const filteredEvents = useMemo(() => {
+    if(updatedEventList)
+      return updatedEventList.filter((event: any) => searchInValue(event, debouncedSearchTerm))
+  }, [debouncedSearchTerm, updatedEventList])
+
 
   const updateEventStatusMutation = useMutation({
     mutationFn: (data: any) => updateEventStatusApi(token, data),
@@ -99,17 +147,8 @@ const EventManagement = () => {
     }
   };
 
-  const handleOnViewReviews = async (event: any) => {
-    const id_data: any = {
-      user_id: id,
-      post_id: String(Number(event.ID) + 1),
-    };
-    try {
-      await getEvent.mutate(id_data);
-    } catch (error) {
-      console.error("Submission error:", error);
-    }
-    navigate(`/eventManagement/reviews/${event.ID}`);
+  const handleOnViewReviews = async () => {
+    navigate(`/eventManagement/reviews`);
   };
 
   return (
@@ -127,6 +166,8 @@ const EventManagement = () => {
                 type="text"
                 className="border border-gray-border rounded-lg py-2 px-4 pl-10 text-sm outline-none w-full"
                 placeholder="Search for an event"
+                value = {search}
+                onChange = {(e) => setSearch(e.target.value)}
               />
               <CiSearch className="absolute top-1/2 left-3 transform -translate-y-1/2 " />
             </div>
@@ -155,14 +196,16 @@ const EventManagement = () => {
                   </div>
                 ) : switchTwo === "Published" ? (
                   <TablePublish
-                    data={updatedEventList}
+                    // data={updatedEventList}
+                    data={filteredEvents}
                     columns={eventPublishedColumns}
                     onViewDetails={handleOnViewDetails}
                     onViewReviews={handleOnViewReviews}
                   />
                 ) : (
                   <TableDraft
-                    data={updatedEventList}
+                    // data={updatedEventList}
+                    data={filteredEvents}
                     columns={eventDraftedColumns}
                     onPublish={handleOnPublish}
                     onViewDetails={handleOnViewDetails}

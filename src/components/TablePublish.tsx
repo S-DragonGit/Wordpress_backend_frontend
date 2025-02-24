@@ -2,6 +2,12 @@
 
 import type React from "react"
 import { useState } from "react"
+import { format } from "date-fns";
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? "" : format(date, "MMM d, yyyy"); 
+};
 
 interface Column {
   header: string
@@ -77,22 +83,24 @@ const TablePublish: React.FC<TablePublishProps> = ({ columns, data, onViewDetail
               </td>
               {columns.map((col, colIndex) => (
                 <td key={colIndex} className="px-4 py-3 text-center">
-                  {col.accessor === "View Full Details" ? (
-                    <button onClick={() => onViewDetails(row)} className="px-4 py-2 rounded-md">
-                      {col.accessor}
-                    </button>
-                  ) : col.accessor === "Survey Results" ? (
-                    <button
-                      disabled
-                      onClick={() => onViewReviews(row)}
-                      className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-light3 hover:text-primary transition-colors"
-                    >
-                      {col.accessor}
-                    </button>
-                  ) : (
-                    row[col.accessor]
-                  )}
-                </td>
+                {col.accessor === "post_date" || col.accessor === "_EventStartDate" ? (
+                  formatDate(row[col.accessor]) // Correctly format the actual date value
+                ) :
+                col.accessor === "View Full Details" ? (
+                  <button onClick={() => onViewDetails(row)} className="px-4 py-2 rounded-md bg-primary-light3 hover:bg-primary-light">
+                    {col.accessor}
+                  </button>
+                ) : col.accessor === "Survey Results" ? (
+                  <button
+                    onClick={() => onViewReviews(row)}
+                    className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-light3 hover:text-primary transition-colors"
+                  >
+                    {col.accessor}
+                  </button>
+                ) : (
+                  row[col.accessor]
+                )}
+              </td>
               ))}
             </tr>
           ))}

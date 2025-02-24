@@ -40,6 +40,7 @@ export interface Question {
   id: number;
   text: string;
   type: 'yesno' | 'review';
+  answer: string;
 }
 export interface Categories {
   category: string;
@@ -51,7 +52,7 @@ export interface EventFormData {
   event_description: string;
   event_start_time: string | null;
   event_end_time: string | null;
-  event_is_virtual: boolean;
+  event_is_virtual: boolean | null;
   event_meeting_link: string;
   event_organizer: string;
   event_location: string;
@@ -69,6 +70,7 @@ export interface EventFormData {
   event_modify_event: boolean;
   event_invite_others: boolean;
   event_view_member_list: boolean;
+  event_category: string | null;
   event_category_slugs: string[];
   post_id: number | null;
   event_featured : boolean;
